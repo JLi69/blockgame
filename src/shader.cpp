@@ -53,18 +53,18 @@ unsigned int createShader(const char* path, GLenum shaderType)
 	return shader;
 }
 
-unsigned int createProgram(unsigned int vertex, unsigned int fragment)
+ShaderProgram::ShaderProgram(unsigned int vertex, unsigned int fragment)
 {
-	unsigned int program = glCreateProgram();
+	programid = glCreateProgram();
 	
-	glAttachShader(program, vertex);
-	glAttachShader(program, fragment);
-	glLinkProgram(program);
-	glValidateProgram(program);
+	glAttachShader(programid, vertex);
+	glAttachShader(programid, fragment);
+	glLinkProgram(programid);
+	glValidateProgram(programid);
 	
 	//Check for linker errors
 	int linkStatus;
-	glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
+	glGetProgramiv(programid, GL_LINK_STATUS, &linkStatus);
 	if(linkStatus != 1) //Failed to link
 	{
 		//Output linker errors
@@ -72,12 +72,27 @@ unsigned int createProgram(unsigned int vertex, unsigned int fragment)
 
 		char message[1024];
 		int len;
-		glGetProgramInfoLog(program, 1023, &len, message);
+		glGetProgramInfoLog(programid, 1023, &len, message);
 		std::cerr << message << '\n';
 	}
 
-	glDetachShader(program, vertex);
-	glDetachShader(program, fragment);
+	glDetachShader(programid, vertex);
+	glDetachShader(programid, fragment);
+}
 
-	return program;
+void ShaderProgram::use()
+{
+	glUseProgram(programid);
+}
+
+int ShaderProgram::getUniformLocation(const char *uniformName)
+{
+	if(uniformLocations.count(uniformName) == 0)
+	{
+		int location = glGetUniformLocation(programid, uniformName);
+		uniformLocations[uniformName] = location;
+		return location;
+	}
+
+	return uniformLocations[uniformName];
 }

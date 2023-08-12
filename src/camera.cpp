@@ -59,6 +59,10 @@ void Camera::handleKeyInput(int key, int action)
 
 void Camera::handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMousey, float dt)
 {
+	int cursorMode = glfwGetInputMode(win, GLFW_CURSOR);
+	if(cursorMode == GLFW_CURSOR_NORMAL)
+		return;
+
 	double x, y;
 	glfwGetCursorPos(win, &x, &y);
 

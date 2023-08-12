@@ -1,0 +1,2 @@
+gcc 
+%cpp -I./lib/stb_image

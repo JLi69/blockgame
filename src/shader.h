@@ -1,6 +1,7 @@
 #ifndef __SHADER_H___
 #include <string>
 #include <glad/glad.h>
+#include <map>
 
 //Helper function that reads contents of a shader file, 
 //returns the string containing the content,
@@ -13,13 +14,20 @@ std::string readShaderFile(const char *path);
 //and returns the id of the shader
 //will output any compiler errors to stderr
 unsigned int createShader(const char *path, GLenum shaderType);
-//Helper function that creates a shader
-//program by taking in two file paths,
-//one to the vertex shader and the other to
-//the fragment shader, will output any compiler
-//or linker errors to stderr, will return the
-//program id
-unsigned int createProgram(unsigned int vertex, unsigned int fragment);
+
+class ShaderProgram
+{
+	std::map<std::string, int> uniformLocations;
+	unsigned int programid;
+public:
+	//creates a shader program by taking in two shader ids,
+	//one that is a vertex shader and the other that is
+	//the fragment shader, will output any compiler
+	//or linker errors to stderr
+	ShaderProgram(unsigned int vertex, unsigned int fragment);
+	void use();
+	int getUniformLocation(const char *uniformName);
+};
 
 #endif
 

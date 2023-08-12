@@ -1,6 +1,7 @@
 #ifndef __BLOCK_H__
 
-unsigned int createBlockMesh();
+void createBlockMesh(unsigned int buffid);
+void createBlockTextureCoords(unsigned int buffid);
 
 #endif
 #define __BLOCK_H__

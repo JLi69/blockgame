@@ -5,9 +5,10 @@ project(blockgame)
 find_package(OpenGL REQUIRED)
 
 aux_source_directory(src source)
-aux_source_directory(glad/src glad)
+aux_source_directory(lib/glad/src glad)
 
-include_directories(glad/include)
+include_directories(lib/glad/include)
+include_directories(lib/stb_image)
 
 add_executable(
 	${PROJECT_NAME}

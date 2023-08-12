@@ -6,6 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 #include "shader.h"
 #include "block.h"
@@ -35,9 +37,7 @@ void handleKeyInput(GLFWwindow *win, int key, int scancode, int action, int mods
 
 void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 {
-	if(button == GLFW_MOUSE_BUTTON_LEFT)
-	{
-		//If mouse position is inside the window,
+	if(button == GLFW_MOUSE_BUTTON_LEFT) { //If mouse position is inside the window,
 		//and the user left clicks,
 		//grab control of the mouse cursor
 		double x, y;
@@ -88,24 +88,59 @@ int main()
 	}
 
 	//Create shaders
-	unsigned int program = createProgram(
+	ShaderProgram program(
 		createShader("assets/shaders/vert.glsl", GL_VERTEX_SHADER),
 		createShader("assets/shaders/frag.glsl", GL_FRAGMENT_SHADER)
 	);
-	glUseProgram(program);
+	program.use();
 
-	unsigned int blockMesh = createBlockMesh();
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
-	glEnableVertexAttribArray(0);	
+	unsigned int vao;
+	glGenVertexArrays(1, &vao);
+	unsigned int blockBuffer[2];
+	glGenBuffers(2, blockBuffer);
+	createBlockMesh(blockBuffer[0]);
+	createBlockTextureCoords(blockBuffer[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, blockBuffer[0]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, blockBuffer[1]);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (void*)0);
+	glEnableVertexAttribArray(1);
+
+	//Texture
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	int width, height, channels;
+	unsigned char *data = 
+		stbi_load("assets/textures/textures.png", &width, &height, &channels, 0);
+	if(data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);	
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cerr << "Failed to open textures\n";
+	}
+	stbi_image_free(data);
 
 	//Main loop
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthFunc(GL_LEQUAL);
 	glClearColor(0.5f, 0.8f, 1.0f, 1.0f);
+	
+	//Amount of time that passes each frame
 	double dt = 0.0;
+	//Mouse position
 	double mousex = 0.0, mousey = 0.0;
 	glfwGetCursorPos(win, &mousex, &mousey);
+	
 	while(!glfwWindowShouldClose(win))
 	{
 		double start = glfwGetTime();
@@ -115,20 +150,29 @@ int main()
 
 		//TEST CUBE
 		//TODO: DELETE THIS CODE LATER
-		{	
-			glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -2.5f, -8.0f));
-			glm::mat4 view = gameState.camera.viewMatrix();
-
-			int perspLocation = glGetUniformLocation(program, "uPerspectiveViewMat");
-			int transLocation = glGetUniformLocation(program, "uTransformMat");	
-			glUniformMatrix4fv(perspLocation, 1, GL_FALSE, glm::value_ptr(gameState.persp * view));
-			glUniformMatrix4fv(transLocation, 1, GL_FALSE, glm::value_ptr(trans));
+		for(int i = 0; i < 16; i++)
+		{
+			for(int j = 0; j < 16; j++)
+			{
+				for(int k = 0; k < 8; k++)
+				{
+					glm::mat4 trans = 
+						glm::translate(
+							glm::mat4(1.0f),
+							glm::vec3(0.0f - 2.0f * j, -2.5f + 2.0f * k, -8.0f - 2.0f * i)
+						);
+					glm::mat4 view = gameState.camera.viewMatrix();
+					int perspLocation = program.getUniformLocation("uPerspectiveViewMat");
+					int transLocation = program.getUniformLocation("uTransformMat");	
+					glUniformMatrix4fv(perspLocation, 1, GL_FALSE, glm::value_ptr(gameState.persp * view));
+					glUniformMatrix4fv(transLocation, 1, GL_FALSE, glm::value_ptr(trans));	
+					glDrawArrays(GL_TRIANGLES, 0, 36);
+				}
+			}
 		}
 
 		//Update camera
 		gameState.camera.move((float)dt);
-
-		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		//Output OpenGL errors
 		GLenum err = glGetError();
