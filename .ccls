@@ -1,2 +1,2 @@
-gcc 
-%cpp -I./lib/stb_image
+gcc
+%cpp -Ilib/stb_image

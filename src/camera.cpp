@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "camera.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <math.h>
 
@@ -117,10 +117,10 @@ void Camera::move(float dt)
 	switch(flyingDirection)
 	{
 	case FLY_UP:
-		position += glm::vec3(0.0f, 5.0f, 0.0f) * dt;
+		position += glm::vec3(0.0f, speed, 0.0f) * dt;
 		break;
 	case FLY_DOWN:
-		position -= glm::vec3(0.0f, 5.0f, 0.0f) * dt;
+		position -= glm::vec3(0.0f, speed, 0.0f) * dt;
 		break;
 	default:
 		break;

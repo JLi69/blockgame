@@ -1,4 +1,4 @@
-#include "block.h"
+#include "block.hpp"
 #include <glad/glad.h>
 
 void createBlockMesh(unsigned int buffid)

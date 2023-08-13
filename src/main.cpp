@@ -9,9 +9,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include "shader.h"
-#include "block.h"
-#include "camera.h"
+#include "shader.hpp"
+#include "camera.hpp"
+#include "world.hpp"
 
 struct State
 {
@@ -52,7 +52,7 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 int main()
 {	
 	State gameState = {
-		.camera = Camera(0.0f, 0.0f, 0.0f, 5.0f),
+		.camera = Camera(0.0f, 256.0f, 0.0f, 16.0f),
 		.persp = glm::perspective(75.0f / 180.0f * 3.14159f, 800.0f / 600.0f, 0.1f, 1000.0f)
 	};	
 
@@ -94,19 +94,6 @@ int main()
 	);
 	program.use();
 
-	unsigned int vao;
-	glGenVertexArrays(1, &vao);
-	unsigned int blockBuffer[2];
-	glGenBuffers(2, blockBuffer);
-	createBlockMesh(blockBuffer[0]);
-	createBlockTextureCoords(blockBuffer[1]);
-	glBindBuffer(GL_ARRAY_BUFFER, blockBuffer[0]);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, blockBuffer[1]);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (void*)0);
-	glEnableVertexAttribArray(1);
-
 	//Texture
 	unsigned int texture;
 	glGenTextures(1, &texture);
@@ -140,7 +127,12 @@ int main()
 	//Mouse position
 	double mousex = 0.0, mousey = 0.0;
 	glfwGetCursorPos(win, &mousex, &mousey);
-	
+
+	//Create world
+	World world = World(256, 128);
+	world.generateWorld();
+	world.buildAllChunks();
+
 	while(!glfwWindowShouldClose(win))
 	{
 		double start = glfwGetTime();
@@ -148,28 +140,11 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		//TEST CUBE
-		//TODO: DELETE THIS CODE LATER
-		for(int i = 0; i < 16; i++)
-		{
-			for(int j = 0; j < 16; j++)
-			{
-				for(int k = 0; k < 8; k++)
-				{
-					glm::mat4 trans = 
-						glm::translate(
-							glm::mat4(1.0f),
-							glm::vec3(0.0f - 2.0f * j, -2.5f + 2.0f * k, -8.0f - 2.0f * i)
-						);
-					glm::mat4 view = gameState.camera.viewMatrix();
-					int perspLocation = program.getUniformLocation("uPerspectiveViewMat");
-					int transLocation = program.getUniformLocation("uTransformMat");	
-					glUniformMatrix4fv(perspLocation, 1, GL_FALSE, glm::value_ptr(gameState.persp * view));
-					glUniformMatrix4fv(transLocation, 1, GL_FALSE, glm::value_ptr(trans));	
-					glDrawArrays(GL_TRIANGLES, 0, 36);
-				}
-			}
-		}
+		glm::mat4 trans = glm::mat4(1.0f);	
+		glm::mat4 view = gameState.camera.viewMatrix();
+		glUniformMatrix4fv(program.getUniformLocation("uPerspectiveViewMat"), 1, GL_FALSE, glm::value_ptr(gameState.persp * view));
+		glUniformMatrix4fv(program.getUniformLocation("uTransformMat"), 1, GL_FALSE, glm::value_ptr(trans));	
+		world.displayWorld();
 
 		//Update camera
 		gameState.camera.move((float)dt);
@@ -194,6 +169,8 @@ int main()
 
 		double end = glfwGetTime();
 		dt = end - start;
+
+		//std::cerr << "Time to draw frame: " << dt << '\n';
 	}
 
 	glfwTerminate();
