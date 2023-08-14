@@ -1,12 +1,14 @@
 #ifndef __WORLD_H__
 #include <stdint.h>
 #include <vector>
+#include <glm/glm.hpp>
 
 enum Blocks : uint8_t
 {
 	AIR,
 	GRASS,
-	STONE
+	STONE,
+	BRICK
 };
 
 class World
@@ -36,6 +38,8 @@ public:
 	void buildChunk(int32_t chunkX, int32_t chunkZ);
 	void buildAllChunks();
 	void displayWorld();
+	
+	uint8_t raycast(glm::vec3 start, float pitch, float yaw, float maxDist);
 };
 
 #endif

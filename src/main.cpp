@@ -23,7 +23,7 @@ void handleWindowResize(GLFWwindow *win, int newWidth, int newHeight)
 {
 	glViewport(0, 0, newWidth, newHeight);	
 	State *state = (State*)glfwGetWindowUserPointer(win);
-	(*state).persp = 
+	state->persp = 
 		glm::perspective(75.0f / 180.0f * 3.14159f, (float)newWidth / (float)newHeight, 0.1f, 1000.0f);
 }
 
@@ -32,7 +32,7 @@ void handleKeyInput(GLFWwindow *win, int key, int scancode, int action, int mods
 	if(key == GLFW_KEY_ESCAPE)	
 		glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	State *state = (State*)glfwGetWindowUserPointer(win);
-	(*state).camera.handleKeyInput(key, action);
+	state->camera.handleKeyInput(key, action);
 };
 
 void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
@@ -52,7 +52,7 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 int main()
 {	
 	State gameState = {
-		.camera = Camera(0.0f, 256.0f, 0.0f, 16.0f),
+		.camera = Camera(0.0f, 256.0f, 0.0f, 8.0f),
 		.persp = glm::perspective(75.0f / 180.0f * 3.14159f, 800.0f / 600.0f, 0.1f, 1000.0f)
 	};	
 
@@ -131,7 +131,7 @@ int main()
 	//Create world
 	World world = World(256, 128);
 	world.generateWorld();
-	world.buildAllChunks();
+	world.buildAllChunks();	
 
 	while(!glfwWindowShouldClose(win))
 	{
@@ -147,7 +147,7 @@ int main()
 		world.displayWorld();
 
 		//Update camera
-		gameState.camera.move((float)dt);
+		gameState.camera.move((float)dt, world);
 
 		//Output OpenGL errors
 		GLenum err = glGetError();
@@ -170,7 +170,7 @@ int main()
 		double end = glfwGetTime();
 		dt = end - start;
 
-		//std::cerr << "Time to draw frame: " << dt << '\n';
+		std::cerr << "Time to draw frame: " << dt << " | FPS: " << 1.0 / dt << '\n';
 	}
 
 	glfwTerminate();

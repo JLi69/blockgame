@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 
 project(blockgame)
 
+set(CMAKE_CXX_FLAGS -O2)
 find_package(OpenGL REQUIRED)
 
 aux_source_directory(src source)

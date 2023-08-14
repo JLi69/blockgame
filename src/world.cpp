@@ -1,22 +1,16 @@
 #include "world.hpp"
 #include <glad/glad.h>
-
+#include <math.h>
 #include <iostream>
-
-void addVertices(std::vector<float> &chunk, 
-				 float vertices[],
-				 float textureCoords[],
-				 int32_t x,
-				 int32_t y,
-				 int32_t z,
-				 uint8_t block);
 
 World::World(uint32_t size, uint32_t height)
 {
 	blocks = new uint8_t[size * size * height];	
 	worldSize = size;
 	worldHeight = height;
-	buffers = new unsigned int[(size / 16 + 1) * (size / 16 + 1) * 2];
+
+	buffers = new unsigned int[(size / 16 + 1) * (size / 16 + 1) * 2];	
+
 	chunks = new std::vector<float>[(size / 16 + 1) * (size / 16 + 1)];
 	glGenBuffers((size / 16 + 1) * (size / 16 + 1) * 2, buffers);
 }
@@ -48,6 +42,18 @@ void World::generateWorld()
 			}
 		}
 	}
+
+	setBlock(0, worldHeight / 2, 0, BRICK);
+	setBlock(0, worldHeight / 2 + 1, 0, BRICK);
+	setBlock(0, worldHeight / 2 + 2, 0, BRICK);
+
+	setBlock(1, worldHeight / 2 + 2, 0, BRICK);
+
+	setBlock(2, worldHeight / 2, 0, BRICK);
+	setBlock(2, worldHeight / 2 + 1, 0, BRICK);
+	setBlock(2, worldHeight / 2 + 2, 0, BRICK);
+
+	setBlock(3, worldHeight / 2 - 1, 0, AIR);
 }
 
 uint8_t World::getBlock(int32_t x, int32_t y, int32_t z)
@@ -273,16 +279,30 @@ void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 {
 	std::cerr << "Building chunk: " << chunkX << ", " << chunkZ << '\n';
 
+	uint32_t index = ((chunkX + worldSize / (2 * 16)) * (worldSize / 16 + 1) +
+					 (chunkZ + worldSize / (2 * 16)));
+	
+	chunks[index].clear();
+
 	int32_t worldChunkX = chunkX * 16,
 			worldChunkZ = chunkZ * 16;
 
 	for(int32_t x = worldChunkX; x < worldChunkX + 16; x++)
 		for(int32_t y = 0; y < worldHeight; y++)
 			for(int32_t z = worldChunkZ; z < worldChunkZ + 16; z++)
-				addBlockVertices(x, y, z, chunkX, chunkZ);
-	
-	uint32_t index = ((chunkX + worldSize / (2 * 16)) * (worldSize / 16 + 1) +
-					 (chunkZ + worldSize / (2 * 16)));	
+				addBlockVertices(x, y, z, chunkX, chunkZ);	
+
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2]);			
+	glBufferData(GL_ARRAY_BUFFER, 
+		 chunks[index].size() * sizeof(float), 
+		 chunks[index].data(),
+		 GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2 + 1]);	
+	glBufferData(GL_ARRAY_BUFFER, 
+		 chunks[index].size() * sizeof(float), 
+		 chunks[index].data(),
+		 GL_STATIC_DRAW);
 }
 
 void World::buildAllChunks()
@@ -301,22 +321,42 @@ void World::displayWorld()
 		for(int32_t z = -(int32_t)worldSize / (2 * 16); z < (int32_t)worldSize / (2 * 16); z++)
 		{
 			uint32_t index = ((x + worldSize / (2 * 16)) * (worldSize / 16 + 1) +
-					 (z + worldSize / (2 * 16)));
-			glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2]);			
-			glBufferData(GL_ARRAY_BUFFER, 
-				 chunks[index].size() * sizeof(float), 
-				 chunks[index].data(),
-				 GL_STATIC_DRAW);
+					 (z + worldSize / (2 * 16)));		
+			
+			glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2]);					
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
-			glEnableVertexAttribArray(0);	
-			glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2 + 1]);	
-			glBufferData(GL_ARRAY_BUFFER, 
-				 chunks[index].size() * sizeof(float), 
-				 chunks[index].data(),
-				 GL_STATIC_DRAW);
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));		
+			glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2 + 1]);		
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
+			glEnableVertexAttribArray(0);			
 			glEnableVertexAttribArray(1);
 			glDrawArrays(GL_TRIANGLES, 0, chunks[index].size() / 5);
 		}
 	}
+}
+
+uint8_t World::raycast(glm::vec3 start, float pitch, float yaw, float maxDist)
+{
+	glm::vec3 currentPos = start;
+	float dist = 0.0f;
+	float step = 0.5f;
+
+	while(dist < maxDist)
+	{
+		if(getBlock((int32_t)floorf(currentPos.x), 
+					(int32_t)floorf(currentPos.y), 
+					(int32_t)floorf(currentPos.z)) != AIR)
+		{
+			return getBlock((int32_t)floorf(currentPos.x), 
+							(int32_t)floorf(currentPos.y), 
+							(int32_t)floorf(currentPos.z));
+		}
+
+		currentPos += glm::vec3(dist * cosf(pitch) * cosf(yaw),
+								dist * sinf(pitch),
+								dist * cosf(pitch) * sinf(yaw));
+
+		dist += step;
+	}
+
+	return 0;
 }

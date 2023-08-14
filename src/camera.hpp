@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
+#include "world.hpp"
 
 enum MovementDirection
 {
@@ -19,15 +20,19 @@ class Camera
 	glm::vec3 position = glm::vec3(0.0f);
 	MovementDirection movementDirection;
 	MovementDirection strafeDirection;
-	MovementDirection flyingDirection;
+	MovementDirection flyingDirection;	
 	float pitch = 0.0f;
 	float yaw = 0.0f;
 	float speed = 0.0f;
+
+	float yvelocity = 0.0f;
+	bool falling = false;
+	bool jumping = false;
 public:
 	Camera(float x, float y, float z, float camSpeed);
 	void handleKeyInput(int key, int action);
 	void handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMousey, float dt);
-	void move(float dt);
+	void move(float dt, World &world);
 	glm::mat4 viewMatrix();
 };
 
