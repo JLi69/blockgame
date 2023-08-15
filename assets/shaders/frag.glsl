@@ -1,9 +1,10 @@
-#version 330
+#version 330 core
 
 out vec4 outColor;
 in vec4 fragPos;
 in vec2 tc;
 uniform sampler2D blockTextures;
+uniform vec3 uSelected;
 
 void main()
 {
@@ -20,5 +21,14 @@ void main()
 		outColor.r *= 0.8;
 		outColor.g *= 0.8;
 		outColor.b *= 0.8;
+	}
+
+	if(fragPos.x / 2.0 + 0.5 - uSelected.x <= 1.0 &&
+	   fragPos.x / 2.0 + 0.5 - uSelected.x >= 0.0 &&
+	   fragPos.y / 2.0 + 0.5 - uSelected.y <= 1.0 &&
+	   fragPos.y / 2.0 + 0.5 - uSelected.y >= 0.0 &&
+	   fragPos.z / 2.0 + 0.5 - uSelected.z <= 1.0 &&
+	   fragPos.z / 2.0 + 0.5 - uSelected.z >= 0.0) {
+		outColor = mix(outColor, vec4(1.0, 1.0, 1.0, 1.0), 0.5);
 	}
 }

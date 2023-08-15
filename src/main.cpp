@@ -19,6 +19,7 @@ struct State
 	Camera camera;
 	glm::mat4 persp;
 	World world;
+	glm::vec3 selected;
 };
 
 void handleWindowResize(GLFWwindow *win, int newWidth, int newHeight)
@@ -116,10 +117,13 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 						 0.05f * sinf(-state->camera.pitch),
 						 0.05f * cosf(state->camera.pitch) * -cosf(state->camera.pitch));
 
-		x = (int32_t)floorf(pos.x);
+		x = (int32_t)floorf(pos.x);	
 		y = (int32_t)floorf(pos.y);
 		z = (int32_t)floorf(pos.z);
 
+		if(state->world.getBlock(x, y, z) != AIR)
+			z--;
+		
 		if(state->world.getBlock(x, y, z) != AIR)
 			return;
 
@@ -186,7 +190,8 @@ int main()
 	State gameState = {
 		.camera = Camera(0.0f, 256.0f, 0.0f, 8.0f),
 		.persp = glm::perspective(75.0f / 180.0f * 3.14159f, 800.0f / 600.0f, 0.1f, 1000.0f),
-		.world = World(256, 128)
+		.world = World(256, 128),
+		.selected = glm::vec3(0.0f, 0.0f, 0.0f)
 	};
 	glfwSetWindowUserPointer(win, &gameState);
 
@@ -251,6 +256,30 @@ int main()
 		//Update camera
 		gameState.camera.move((float)dt, gameState.world);
 
+		{
+			glm::vec3 pos = raycast(
+				gameState.world, 
+				gameState.camera.position / 2.0f + glm::vec3(0.5f, 0.2f, 0.5f),
+				gameState.camera.yaw,
+				gameState.camera.pitch,
+				4.0f
+			);
+
+			gameState.selected = glm::vec3(floorf(pos.x), floorf(pos.y), floorf(pos.z));
+			if(gameState.world.getBlock(
+					(int32_t)gameState.selected.x, 
+					(int32_t)gameState.selected.y,
+					(int32_t)gameState.selected.z) == AIR)
+			{
+				gameState.selected.y = -999.0f;
+			}
+
+			glUniform3f(program.getUniformLocation("uSelected"), 
+						gameState.selected.x, 
+						gameState.selected.y,
+						gameState.selected.z);
+		}
+
 		//Output OpenGL errors
 		GLenum err = glGetError();
 		while(err != GL_NO_ERROR)
@@ -272,7 +301,7 @@ int main()
 		double end = glfwGetTime();
 		dt = end - start;
 
-		//std::cerr << "Time to draw frame: " << dt << " | FPS: " << 1.0 / dt << '\n';
+		std::cerr << "Time to draw frame: " << dt << " | FPS: " << 1.0 / dt << '\n';
 	}
 
 	glfwTerminate();
