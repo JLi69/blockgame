@@ -10,8 +10,8 @@ World::World(uint32_t size, uint32_t height)
 	worldHeight = height;
 
 	buffers = new unsigned int[(size / 16 + 1) * (size / 16 + 1) * 2];	
+	chunkVertexCount = new unsigned int[(size / 16 + 1) * (size / 16 + 1)];
 
-	chunks = new std::vector<float>[(size / 16 + 1) * (size / 16 + 1)];
 	glGenBuffers((size / 16 + 1) * (size / 16 + 1) * 2, buffers);
 }
 
@@ -20,7 +20,7 @@ World::~World()
 	//glDeleteBuffers((worldSize / 16 + 1) * (worldSize / 16 + 1) * 2, buffers);
 	delete[] blocks;
 	delete[] buffers;
-	delete[] chunks;
+	delete[] chunkVertexCount;
 }
 
 void World::generateWorld()
@@ -42,18 +42,6 @@ void World::generateWorld()
 			}
 		}
 	}
-
-	setBlock(0, worldHeight / 2, 0, BRICK);
-	setBlock(0, worldHeight / 2 + 1, 0, BRICK);
-	setBlock(0, worldHeight / 2 + 2, 0, BRICK);
-
-	setBlock(1, worldHeight / 2 + 2, 0, BRICK);
-
-	setBlock(2, worldHeight / 2, 0, BRICK);
-	setBlock(2, worldHeight / 2 + 1, 0, BRICK);
-	setBlock(2, worldHeight / 2 + 2, 0, BRICK);
-
-	setBlock(3, worldHeight / 2 - 1, 0, AIR);
 }
 
 uint8_t World::getBlock(int32_t x, int32_t y, int32_t z)
@@ -109,13 +97,10 @@ void addVertices(std::vector<float> &chunk,
 	}
 }
 
-void World::addBlockVertices(int32_t x, int32_t y, int32_t z, int32_t chunkX, int32_t chunkZ)
+void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, int32_t z)
 {
 	if(getBlock(x, y, z) == AIR)
 		return;
-
-	uint32_t index = (chunkX + worldSize / (2 * 16)) * (worldSize / 16 + 1) +
-					 (chunkZ + worldSize / (2 * 16));
 
 	if(getBlock(x + 1, y, z) == AIR)
 	{
@@ -140,7 +125,7 @@ void World::addBlockVertices(int32_t x, int32_t y, int32_t z, int32_t chunkX, in
 			1.0f, 0.0f,	
 		};
 
-		addVertices(chunks[index], rightFace, rightFaceTexture, x, y, z, getBlock(x, y, z));
+		addVertices(chunk, rightFace, rightFaceTexture, x, y, z, getBlock(x, y, z));
 	}
 
 	if(getBlock(x - 1, y, z) == AIR)
@@ -167,7 +152,7 @@ void World::addBlockVertices(int32_t x, int32_t y, int32_t z, int32_t chunkX, in
 		};
 
 
-		addVertices(chunks[index], leftFace, leftFaceTexture, x, y, z, getBlock(x, y, z));
+		addVertices(chunk, leftFace, leftFaceTexture, x, y, z, getBlock(x, y, z));
 	}
 
 	if(getBlock(x, y + 1, z) == AIR)
@@ -193,7 +178,7 @@ void World::addBlockVertices(int32_t x, int32_t y, int32_t z, int32_t chunkX, in
 			0.0f, 0.0f,	
 		};
 
-		addVertices(chunks[index], topFace, topFaceTexture, x, y, z, getBlock(x, y, z));
+		addVertices(chunk, topFace, topFaceTexture, x, y, z, getBlock(x, y, z));
 	}
 
 	if(getBlock(x, y - 1, z) == AIR)
@@ -219,7 +204,7 @@ void World::addBlockVertices(int32_t x, int32_t y, int32_t z, int32_t chunkX, in
 			0.0f, 0.0f,
 		};
 
-		addVertices(chunks[index], bottomFace, bottomFaceTexture, x, y, z, getBlock(x, y, z));
+		addVertices(chunk, bottomFace, bottomFaceTexture, x, y, z, getBlock(x, y, z));
 	}
 
 	if(getBlock(x, y, z + 1) == AIR)
@@ -245,7 +230,7 @@ void World::addBlockVertices(int32_t x, int32_t y, int32_t z, int32_t chunkX, in
 			1.0f, 1.0f,
 		};
 
-		addVertices(chunks[index], frontFace, frontFaceTexture, x, y, z, getBlock(x, y, z));
+		addVertices(chunk, frontFace, frontFaceTexture, x, y, z, getBlock(x, y, z));
 	}
 
 	if(getBlock(x, y, z - 1) == AIR)
@@ -271,7 +256,7 @@ void World::addBlockVertices(int32_t x, int32_t y, int32_t z, int32_t chunkX, in
 			0.0f, 0.0f,
 		};	
 
-		addVertices(chunks[index], backFace, backFaceTexture, x, y, z, getBlock(x, y, z));	
+		addVertices(chunk, backFace, backFaceTexture, x, y, z, getBlock(x, y, z));	
 	}
 }
 
@@ -282,7 +267,7 @@ void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 	uint32_t index = ((chunkX + worldSize / (2 * 16)) * (worldSize / 16 + 1) +
 					 (chunkZ + worldSize / (2 * 16)));
 	
-	chunks[index].clear();
+	std::vector<float> chunk;
 
 	int32_t worldChunkX = chunkX * 16,
 			worldChunkZ = chunkZ * 16;
@@ -290,18 +275,20 @@ void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 	for(int32_t x = worldChunkX; x < worldChunkX + 16; x++)
 		for(int32_t y = 0; y < worldHeight; y++)
 			for(int32_t z = worldChunkZ; z < worldChunkZ + 16; z++)
-				addBlockVertices(x, y, z, chunkX, chunkZ);	
+				addBlockVertices(chunk, x, y, z);	
+
+	chunkVertexCount[index] = chunk.size() / 5;
 
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2]);			
 	glBufferData(GL_ARRAY_BUFFER, 
-		 chunks[index].size() * sizeof(float), 
-		 chunks[index].data(),
+		 chunk.size() * sizeof(float), 
+		 chunk.data(),
 		 GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2 + 1]);	
 	glBufferData(GL_ARRAY_BUFFER, 
-		 chunks[index].size() * sizeof(float), 
-		 chunks[index].data(),
+		 chunk.size() * sizeof(float), 
+		 chunk.data(),
 		 GL_STATIC_DRAW);
 }
 
@@ -329,34 +316,31 @@ void World::displayWorld()
 			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
 			glEnableVertexAttribArray(0);			
 			glEnableVertexAttribArray(1);
-			glDrawArrays(GL_TRIANGLES, 0, chunks[index].size() / 5);
+			glDrawArrays(GL_TRIANGLES, 0, chunkVertexCount[index]);
 		}
 	}
 }
 
-uint8_t World::raycast(glm::vec3 start, float pitch, float yaw, float maxDist)
+glm::vec3 raycast(World &world, glm::vec3 start, float yaw, float pitch, float maxdist)
 {
+	//TODO: better raycasting algorithm
 	glm::vec3 currentPos = start;
-	float dist = 0.0f;
-	float step = 0.5f;
+	float step = 0.05f;
 
-	while(dist < maxDist)
+	while(glm::length(currentPos - start) < maxdist)
 	{
-		if(getBlock((int32_t)floorf(currentPos.x), 
-					(int32_t)floorf(currentPos.y), 
-					(int32_t)floorf(currentPos.z)) != AIR)
+		if(world.getBlock(
+				(int32_t)floorf(currentPos.x), 
+				(int32_t)floorf(currentPos.y), 
+				(int32_t)floorf(currentPos.z)) != AIR)
 		{
-			return getBlock((int32_t)floorf(currentPos.x), 
-							(int32_t)floorf(currentPos.y), 
-							(int32_t)floorf(currentPos.z));
+			return currentPos;
 		}
 
-		currentPos += glm::vec3(dist * cosf(pitch) * cosf(yaw),
-								dist * sinf(pitch),
-								dist * cosf(pitch) * sinf(yaw));
-
-		dist += step;
+		currentPos += glm::vec3(step * cosf(pitch) * sinf(yaw),
+								step * sinf(-pitch),
+								step * cosf(pitch) * -cosf(yaw));
 	}
 
-	return 0;
+	return currentPos;
 }

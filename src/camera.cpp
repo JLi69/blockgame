@@ -99,7 +99,7 @@ void Camera::move(float dt, World &world)
 {
 	if(!falling && jumping)
 	{
-		yvelocity = 10.0f;
+		yvelocity = 12.0f;
 		falling = true;
 	}
 
@@ -108,10 +108,10 @@ void Camera::move(float dt, World &world)
 	switch(movementDirection)
 	{
 	case FORWARD:
-		velocity += glm::vec3(sin(yaw) * speed, 0.0f, -cos(yaw) * speed);
+		velocity += glm::vec3(sinf(yaw) * speed, 0.0f, -cosf(yaw) * speed);
 		break;
 	case BACKWARD:
-		velocity -= glm::vec3(sin(yaw) * speed, 0.0f, -cos(yaw) * speed);
+		velocity -= glm::vec3(sinf(yaw) * speed, 0.0f, -cosf(yaw) * speed);
 		break;
 	default:
 		break;
@@ -121,14 +121,14 @@ void Camera::move(float dt, World &world)
 	switch(strafeDirection)
 	{
 	case STRAFE_LEFT:
-		velocity += glm::vec3(sin(-yaw - 3.14159f / 2.0f) * speed, 
+		velocity += glm::vec3(sinf(-yaw - 3.14159f / 2.0f) * speed, 
 							  0.0f,
-							  cos(-yaw - 3.14159f / 2.0f) * speed);
+							  cosf(-yaw - 3.14159f / 2.0f) * speed);
 		break;
 	case STRAFE_RIGHT:
-		velocity += glm::vec3(sin(-yaw + 3.14159f / 2.0f) * speed, 
+		velocity += glm::vec3(sinf(-yaw + 3.14159f / 2.0f) * speed, 
 							  0.0f,
-							  cos(-yaw + 3.14159f / 2.0f) * speed);
+							  cosf(-yaw + 3.14159f / 2.0f) * speed);
 		break;
 	default:
 		break;

@@ -17,13 +17,12 @@ class World
 	uint32_t worldSize, worldHeight;
 
 	unsigned int *buffers;
-	std::vector<float> *chunks;
+	unsigned int *chunkVertexCount;
 
-	void addBlockVertices(int32_t x, 
+	void addBlockVertices(std::vector<float> &chunk,
+						  int32_t x, 
 						  int32_t y,
-						  int32_t z,
-						  int32_t chunkX,
-						  int32_t chunkZ);
+						  int32_t z);
 public:
 	//World ranges from
 	//x: -size / 2 -> size / 2
@@ -37,10 +36,10 @@ public:
 	void setBlock(int32_t x, int32_t y, int32_t z, uint8_t block);
 	void buildChunk(int32_t chunkX, int32_t chunkZ);
 	void buildAllChunks();
-	void displayWorld();
-	
-	uint8_t raycast(glm::vec3 start, float pitch, float yaw, float maxDist);
+	void displayWorld();	
 };
+
+glm::vec3 raycast(World &world, glm::vec3 start, float yaw, float pitch, float maxdist);
 
 #endif
 

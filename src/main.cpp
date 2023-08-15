@@ -12,11 +12,13 @@
 #include "shader.hpp"
 #include "camera.hpp"
 #include "world.hpp"
+#include "hitbox.hpp"
 
 struct State
 {
 	Camera camera;
 	glm::mat4 persp;
+	World world;
 };
 
 void handleWindowResize(GLFWwindow *win, int newWidth, int newHeight)
@@ -37,7 +39,10 @@ void handleKeyInput(GLFWwindow *win, int key, int scancode, int action, int mods
 
 void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 {
-	if(button == GLFW_MOUSE_BUTTON_LEFT) { //If mouse position is inside the window,
+	int cursorMode = glfwGetInputMode(win, GLFW_CURSOR);
+
+	if(button == GLFW_MOUSE_BUTTON_LEFT && cursorMode == GLFW_CURSOR_NORMAL) { 
+		//If mouse position is inside the window,
 		//and the user left clicks,
 		//grab control of the mouse cursor
 		double x, y;
@@ -47,15 +52,107 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 		if(x < (double)w && y < (double)h && x > 0.0 && y > 0.0)
 			glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
+
+	State *state = (State*)glfwGetWindowUserPointer(win);
+
+	//Destroy block
+	if(button == GLFW_MOUSE_BUTTON_LEFT && 
+	   action == GLFW_PRESS && 
+	   cursorMode == GLFW_CURSOR_DISABLED)
+	{
+		glm::vec3 pos = raycast(
+			state->world, 
+			state->camera.position / 2.0f + glm::vec3(0.5f, 0.2f, 0.5f),
+			state->camera.yaw,
+			state->camera.pitch,
+			4.0f
+		);
+
+		int32_t x = (int32_t)floorf(pos.x),
+				y = (int32_t)floorf(pos.y),
+				z = (int32_t)floorf(pos.z);
+
+		int32_t chunkX = x / 16,
+				chunkZ = z / 16;
+		if(z < 0 && z % 16 != 0)
+			chunkZ--;
+		if(x < 0 && x % 16 != 0)
+			chunkX--;
+
+		state->world.setBlock(x, y, z, AIR);
+		state->world.buildChunk(chunkX, chunkZ);
+
+		if(x % 16 == 0 || (x - 1) % 16 == 0)
+			state->world.buildChunk(chunkX - 1, chunkZ);	
+		if((x + 1) % 16 == 0 || x % 16 == 0)
+			state->world.buildChunk(chunkX + 1, chunkZ);
+		if((z - 1) % 16 == 0 || z % 16 == 0)
+			state->world.buildChunk(chunkX, chunkZ - 1);	
+		if((z + 1) % 16 == 0 || z % 16 == 0)
+			state->world.buildChunk(chunkX, chunkZ + 1);	
+	}
+
+	//Place block
+	if(button == GLFW_MOUSE_BUTTON_RIGHT &&
+	   action == GLFW_PRESS &&
+	   cursorMode == GLFW_CURSOR_DISABLED)
+	{
+		glm::vec3 pos = raycast(
+			state->world, 
+			state->camera.position / 2.0f + glm::vec3(0.5f, 0.2f, 0.5f),
+			state->camera.yaw,
+			state->camera.pitch,
+			4.0f
+		);
+
+		int32_t x = (int32_t)floorf(pos.x),
+				y = (int32_t)floorf(pos.y),
+				z = (int32_t)floorf(pos.z);
+
+		if(state->world.getBlock(x, y, z) == AIR)
+			return;
+
+		pos -= glm::vec3(0.05f * cosf(state->camera.pitch) * sinf(state->camera.yaw),
+						 0.05f * sinf(-state->camera.pitch),
+						 0.05f * cosf(state->camera.pitch) * -cosf(state->camera.pitch));
+
+		x = (int32_t)floorf(pos.x);
+		y = (int32_t)floorf(pos.y);
+		z = (int32_t)floorf(pos.z);
+
+		if(state->world.getBlock(x, y, z) != AIR)
+			return;
+
+		Hitbox block = Hitbox(glm::vec3(x, y + 0.5f, z), glm::vec3(1.0f));	
+		glm::vec3 hitboxOffset = glm::vec3(0.0f, 0.3f, 0.0f);
+		glm::vec3 hitboxDimensions = glm::vec3(0.6f, 1.8f, 0.6f);
+		Hitbox player = Hitbox(state->camera.position / 2.0f - hitboxOffset, hitboxDimensions);
+		if(intersecting(block, player))
+			return;
+
+		int32_t chunkX = x / 16,
+				chunkZ = z / 16;
+		if(z < 0 && z % 16 != 0)
+			chunkZ--;
+		if(x < 0 && x % 16 != 0)
+			chunkX--;
+
+		state->world.setBlock(x, y, z, BRICK);
+		state->world.buildChunk(chunkX, chunkZ);
+
+		if(x % 16 == 0 || (x - 1) % 16 == 0)
+			state->world.buildChunk(chunkX - 1, chunkZ);	
+		if((x + 1) % 16 == 0 || x % 16 == 0)
+			state->world.buildChunk(chunkX + 1, chunkZ);
+		if((z - 1) % 16 == 0 || z % 16 == 0)
+			state->world.buildChunk(chunkX, chunkZ - 1);	
+		if((z + 1) % 16 == 0 || z % 16 == 0)
+			state->world.buildChunk(chunkX, chunkZ + 1);
+	}
 }
 
 int main()
-{	
-	State gameState = {
-		.camera = Camera(0.0f, 256.0f, 0.0f, 8.0f),
-		.persp = glm::perspective(75.0f / 180.0f * 3.14159f, 800.0f / 600.0f, 0.1f, 1000.0f)
-	};	
-
+{		
 	//Try to initialize glfw
 	if(!glfwInit())
 	{
@@ -71,7 +168,6 @@ int main()
 		glfwTerminate();
 		return -1;
 	}
-	glfwSetWindowUserPointer(win, &gameState);
 	glfwSetWindowSizeCallback(win, handleWindowResize);
 	glfwSetKeyCallback(win, handleKeyInput);
 	glfwSetMouseButtonCallback(win, handleMouseInput);
@@ -86,6 +182,13 @@ int main()
 		glfwTerminate();
 		return -1;
 	}
+
+	State gameState = {
+		.camera = Camera(0.0f, 256.0f, 0.0f, 8.0f),
+		.persp = glm::perspective(75.0f / 180.0f * 3.14159f, 800.0f / 600.0f, 0.1f, 1000.0f),
+		.world = World(256, 128)
+	};
+	glfwSetWindowUserPointer(win, &gameState);
 
 	//Create shaders
 	ShaderProgram program(
@@ -129,9 +232,8 @@ int main()
 	glfwGetCursorPos(win, &mousex, &mousey);
 
 	//Create world
-	World world = World(256, 128);
-	world.generateWorld();
-	world.buildAllChunks();	
+	gameState.world.generateWorld();
+	gameState.world.buildAllChunks();	
 
 	while(!glfwWindowShouldClose(win))
 	{
@@ -144,10 +246,10 @@ int main()
 		glm::mat4 view = gameState.camera.viewMatrix();
 		glUniformMatrix4fv(program.getUniformLocation("uPerspectiveViewMat"), 1, GL_FALSE, glm::value_ptr(gameState.persp * view));
 		glUniformMatrix4fv(program.getUniformLocation("uTransformMat"), 1, GL_FALSE, glm::value_ptr(trans));	
-		world.displayWorld();
+		gameState.world.displayWorld();
 
 		//Update camera
-		gameState.camera.move((float)dt, world);
+		gameState.camera.move((float)dt, gameState.world);
 
 		//Output OpenGL errors
 		GLenum err = glGetError();
@@ -170,7 +272,7 @@ int main()
 		double end = glfwGetTime();
 		dt = end - start;
 
-		std::cerr << "Time to draw frame: " << dt << " | FPS: " << 1.0 / dt << '\n';
+		//std::cerr << "Time to draw frame: " << dt << " | FPS: " << 1.0 / dt << '\n';
 	}
 
 	glfwTerminate();
