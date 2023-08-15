@@ -113,16 +113,17 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 		if(state->world.getBlock(x, y, z) == AIR)
 			return;
 
+		int32_t selectedX = x,
+				selectedY = y,
+				selectedZ = z;
+
 		pos -= glm::vec3(0.05f * cosf(state->camera.pitch) * sinf(state->camera.yaw),
 						 0.05f * sinf(-state->camera.pitch),
-						 0.05f * cosf(state->camera.pitch) * -cosf(state->camera.pitch));
+						 0.05f * cosf(state->camera.pitch) * -cosf(state->camera.yaw));
 
 		x = (int32_t)floorf(pos.x);	
 		y = (int32_t)floorf(pos.y);
 		z = (int32_t)floorf(pos.z);
-
-		if(state->world.getBlock(x, y, z) != AIR)
-			z--;
 		
 		if(state->world.getBlock(x, y, z) != AIR)
 			return;
