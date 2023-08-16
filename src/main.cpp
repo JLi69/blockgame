@@ -36,6 +36,7 @@ void handleKeyInput(GLFWwindow *win, int key, int scancode, int action, int mods
 		glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	State *state = (State*)glfwGetWindowUserPointer(win);
 	state->player.handleKeyInput(key, action);
+	state->player.selectBlock(key);
 };
 
 void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
@@ -139,7 +140,7 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 		if(x < 0 && x % CHUNK_SIZE != 0)
 			chunkX--;
 
-		state->world.setBlock(x, y, z, BRICK);
+		state->world.setBlock(x, y, z, state->player.selectedBlock);
 		state->world.buildChunk(chunkX, chunkZ);
 
 		if(x % CHUNK_SIZE == 0 || (x - 1) % CHUNK_SIZE == 0)
@@ -239,7 +240,7 @@ int main()
 
 	//Create world
 	gameState.world.generateWorld();
-	gameState.world.buildAllChunks();	
+	gameState.world.buildAllChunks();		
 
 	while(!glfwWindowShouldClose(win))
 	{

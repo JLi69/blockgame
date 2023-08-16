@@ -7,8 +7,10 @@ enum Blocks : uint8_t
 {
 	AIR,
 	GRASS,
+	DIRT,
 	STONE,
-	BRICK
+	BRICK,
+	WOOD
 };
 
 const int32_t CHUNK_SIZE = 16;

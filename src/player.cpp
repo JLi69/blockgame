@@ -70,6 +70,28 @@ void Player::handleKeyInput(int key, int action)
 	}
 }
 
+void Player::selectBlock(int key)
+{
+	switch(key)
+	{
+	case GLFW_KEY_1:
+		selectedBlock = GRASS;
+		break;
+	case GLFW_KEY_2:
+		selectedBlock = DIRT;
+		break;
+	case GLFW_KEY_3:
+		selectedBlock = STONE;
+		break;
+	case GLFW_KEY_4:
+		selectedBlock = BRICK;
+		break;
+	case GLFW_KEY_5:
+		selectedBlock = WOOD;
+		break;
+	}
+}
+
 void Player::handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMousey, float dt)
 {
 	int cursorMode = glfwGetInputMode(win, GLFW_CURSOR);
@@ -161,6 +183,7 @@ void Player::move(float dt, World &world)
 		yvelocity += -GRAVITY * dt;
 		velocity += glm::vec3(0.0f, yvelocity * 0.5f, 0.0f);
 	}
+
 	hitbox.position.y += velocity.y * dt;
 	block = searchForBlockCollision(hitbox, world);
 	if(intersecting(block, hitbox) && hitbox.position.y >= block.position.y - block.dimensions.y / 2.0f)

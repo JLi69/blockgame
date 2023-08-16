@@ -35,7 +35,9 @@ void World::generateWorld()
 			{
 				if(y == worldHeight / 2 - 1)
 					setBlock(x, y, z, GRASS);
-				else if(y < worldHeight / 2 - 1)
+				else if(y < worldHeight / 2 - 1 && y >= worldHeight / 2 - 4)
+					setBlock(x, y, z, DIRT);	
+				else if(y < worldHeight / 2 - 4)
 					setBlock(x, y, z, STONE);
 				else
 					setBlock(x, y, z, AIR);

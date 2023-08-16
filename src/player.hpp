@@ -5,8 +5,8 @@
 #include "world.hpp"
 #include "hitbox.hpp"
 
-const float JUMP_FORCE = 10.0f;
-const float GRAVITY = 30.0f;
+const float JUMP_FORCE = 8.0f;
+const float GRAVITY = 20.0f;
 
 enum MovementDirection
 {
@@ -41,9 +41,11 @@ public:
 	float pitch = 0.0f;
 	float yaw = 0.0f;
 	float speed = 0.0f;
+	Blocks selectedBlock = BRICK;
 
 	Player(glm::vec3 position, glm::vec3 dimensions, float camSpeed);
 	void handleKeyInput(int key, int action);
+	void selectBlock(int key);
 	void handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMousey, float dt);
 	void move(float dt, World &world);
 	Camera getCamera();
