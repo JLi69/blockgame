@@ -1,13 +1,11 @@
-#include "camera.hpp"
+#include "player.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <math.h>
 #include "hitbox.hpp"
 
-#include <iostream>
-
-Camera::Camera(float x, float y, float z, float camSpeed)
+Player::Player(glm::vec3 position, glm::vec3 dimensions, float camSpeed)
 {
-	position = glm::vec3(x, y, z);
+	hitbox = Hitbox(position, dimensions);
 	speed = camSpeed;
 }
 
@@ -38,7 +36,7 @@ MovementDirection directionFromKey(
 	return currentDirection;
 }
 
-void Camera::handleKeyInput(int key, int action)
+void Player::handleKeyInput(int key, int action)
 {
 	//W moves forward
 	movementDirection = 
@@ -64,14 +62,15 @@ void Camera::handleKeyInput(int key, int action)
 	else if(key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
 		jumping = false;
 
+	//Respawn
 	if(key == GLFW_KEY_R && action == GLFW_PRESS)
 	{
-		position = glm::vec3(0.0f, 256.0f, 0.0f);
+		hitbox.position = glm::vec3(0.0f, 256.0f, 0.0f);
 		yvelocity = 0.0f;
 	}
 }
 
-void Camera::handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMousey, float dt)
+void Player::handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMousey, float dt)
 {
 	int cursorMode = glfwGetInputMode(win, GLFW_CURSOR);
 	if(cursorMode == GLFW_CURSOR_NORMAL)
@@ -95,11 +94,11 @@ void Camera::handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMous
 		pitch = 3.14159 / 2.0f;
 }
 
-void Camera::move(float dt, World &world)
+void Player::move(float dt, World &world)
 {
 	if(!falling && jumping)
 	{
-		yvelocity = 12.0f;
+		yvelocity = JUMP_FORCE;
 		falling = true;
 	}
 
@@ -134,9 +133,9 @@ void Camera::move(float dt, World &world)
 		break;
 	}
 
-	if(position.y < -256.0f)
+	if(hitbox.position.y < -256.0f)
 	{
-		position = glm::vec3(0.0f, 256.0f, 0.0f);
+		hitbox.position = glm::vec3(0.0f, 256.0f, 0.0f);
 		yvelocity = 0.0f;	
 	}
 
@@ -153,27 +152,23 @@ void Camera::move(float dt, World &world)
 		break;
 	}*/
 
-	Hitbox cameraHitbox;
 	Hitbox block;
-	glm::vec3 hitboxOffset = glm::vec3(0.0f, 0.3f, 0.0f);
-	glm::vec3 hitboxDimensions = glm::vec3(0.6f, 1.8f, 0.6f);
 
 	//Fall due to gravity
 	if(falling)
 	{
 		velocity += glm::vec3(0.0f, yvelocity * 0.5f, 0.0f);
-		yvelocity += -20.0f * dt;
+		yvelocity += -GRAVITY * dt;
 		velocity += glm::vec3(0.0f, yvelocity * 0.5f, 0.0f);
 	}
-	position.y += velocity.y * dt;
-	cameraHitbox = Hitbox(position / 2.0f - hitboxOffset, hitboxDimensions);	
-	block = searchForBlockCollision(cameraHitbox, world);
-	if(intersecting(block, cameraHitbox) && cameraHitbox.position.y >= block.position.y - block.dimensions.y / 2.0f)
+	hitbox.position.y += velocity.y * dt;
+	block = searchForBlockCollision(hitbox, world);
+	if(intersecting(block, hitbox) && hitbox.position.y >= block.position.y - block.dimensions.y / 2.0f)
 	{
 		falling = false;
 		yvelocity = 0.0f;	
 	}
-	else if(intersecting(block, cameraHitbox) && cameraHitbox.position.y <= block.position.y + block.dimensions.y / 2.0f)
+	else if(intersecting(block, hitbox) && hitbox.position.y <= block.position.y + block.dimensions.y / 2.0f)
 	{
 		falling = true;
 		yvelocity = -0.5f;
@@ -182,20 +177,25 @@ void Camera::move(float dt, World &world)
 	{
 		falling = true;
 	}	
-	cameraHitbox = uncollideY(cameraHitbox, block);
-	position = (cameraHitbox.position + hitboxOffset) * 2.0f;
+	hitbox = uncollideY(hitbox, block);
 
-	position.x += velocity.x * dt;
-	cameraHitbox = Hitbox(position / 2.0f - hitboxOffset, hitboxDimensions);
-	block = searchForBlockCollision(cameraHitbox, world);	
-	cameraHitbox = uncollideX(cameraHitbox, block);
-	position = (cameraHitbox.position + hitboxOffset) * 2.0f;	
+	hitbox.position.x += velocity.x * dt;
+	block = searchForBlockCollision(hitbox, world);	
+	hitbox = uncollideX(hitbox, block);
 
-	position.z += velocity.z * dt;	
-	cameraHitbox = Hitbox(position / 2.0f - hitboxOffset, hitboxDimensions);
-	block = searchForBlockCollision(cameraHitbox, world);
-	cameraHitbox = uncollideZ(cameraHitbox, block);
-	position = (cameraHitbox.position + hitboxOffset) * 2.0f;	
+	hitbox.position.z += velocity.z * dt;	
+	block = searchForBlockCollision(hitbox, world);
+	hitbox = uncollideZ(hitbox, block);
+}
+
+Camera Player::getCamera()
+{
+	glm::vec3 offset = glm::vec3(0.0f, 0.3f, 0.0f);
+	return {
+		.position = hitbox.position * WORLD_SCALE + offset,
+		.pitch = pitch,
+		.yaw = yaw
+	};
 }
 
 //Returns the view matrix

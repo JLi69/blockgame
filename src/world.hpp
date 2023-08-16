@@ -11,6 +11,9 @@ enum Blocks : uint8_t
 	BRICK
 };
 
+const int32_t CHUNK_SIZE = 16;
+const float WORLD_SCALE = 2.0f;
+
 class World
 {
 	uint8_t *blocks;
@@ -40,6 +43,13 @@ public:
 };
 
 glm::vec3 raycast(World &world, glm::vec3 start, float yaw, float pitch, float maxdist);
+void addVertices(std::vector<float> &chunk, 
+				 const float vertices[],
+				 const float textureCoords[],
+				 int32_t x,
+				 int32_t y,
+				 int32_t z,
+				 uint8_t blockType);
 
 #endif
 

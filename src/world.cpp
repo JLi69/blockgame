@@ -9,10 +9,10 @@ World::World(uint32_t size, uint32_t height)
 	worldSize = size;
 	worldHeight = height;
 
-	buffers = new unsigned int[(size / 16 + 1) * (size / 16 + 1) * 2];	
-	chunkVertexCount = new unsigned int[(size / 16 + 1) * (size / 16 + 1)];
+	buffers = new unsigned int[(size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1) * 2];	
+	chunkVertexCount = new unsigned int[(size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1)];
 
-	glGenBuffers((size / 16 + 1) * (size / 16 + 1) * 2, buffers);
+	glGenBuffers((size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1) * 2, buffers);
 }
 
 World::~World()
@@ -71,29 +71,21 @@ void World::setBlock(int32_t x, int32_t y, int32_t z, uint8_t block)
 }
 
 void addVertices(std::vector<float> &chunk, 
-				 float vertices[],
-				 float textureCoords[],
+				 const float vertices[],
+				 const float textureCoords[],
 				 int32_t x,
 				 int32_t y,
 				 int32_t z,
 				 uint8_t blockType)
 {
-	int32_t chunkX = x / 16,
-			chunkZ = z / 16;
-
-	if(x < 0)
-		chunkX -= 1;
-	if(z < 0)
-		chunkZ -= 1;
-
 	for(int i = 0; i < 6; i++)
 	{
 		chunk.push_back(vertices[i * 3] + x * 2.0f);
 		chunk.push_back(vertices[i * 3 + 1] + y * 2.0f);
 		chunk.push_back(vertices[i * 3 + 2] + z * 2.0f);
 
-		chunk.push_back(textureCoords[i * 2] * 1.0f / 16.0f + (blockType % 16) * 1.0f / 16.0f);
-		chunk.push_back(textureCoords[i * 2 + 1] * 1.0f / 16.0f + (blockType / 16) * 1.0f / 16.0f);
+		chunk.push_back(textureCoords[i * 2] * 1.0f / (float)CHUNK_SIZE + (blockType % CHUNK_SIZE) * 1.0f / (float)CHUNK_SIZE);
+		chunk.push_back(textureCoords[i * 2 + 1] * 1.0f / (float)CHUNK_SIZE + (blockType / CHUNK_SIZE) * 1.0f / (float)CHUNK_SIZE);
 	}
 }
 
@@ -105,17 +97,17 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 	if(getBlock(x + 1, y, z) == AIR)
 	{
 		//Right face	
-		float rightFace[] = {
-			1.0f, 1.0f, 1.0f,
-			1.0f, -1.0f, 1.0f,
-			1.0f, -1.0f, -1.0f,
+		const float rightFace[] = {
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
 
-			1.0f, 1.0f, 1.0f,
-			1.0f, -1.0f, -1.0f,
-			1.0f, 1.0f, -1.0f,
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
 		};
 
-		float rightFaceTexture[] = {
+		const float rightFaceTexture[] = {
 			0.0f, 0.0f,	
 			0.0f, 1.0f,
 			1.0f, 1.0f,
@@ -131,17 +123,17 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 	if(getBlock(x - 1, y, z) == AIR)
 	{
 		//Left face	
-		float leftFace[] = {
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, 1.0f,
-			-1.0f, 1.0f, 1.0f,
+		const float leftFace[] = {
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
 
-			-1.0f, 1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, 1.0f, 1.0f,
+			-WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
 		};
 
-		float leftFaceTexture[] = {
+		const float leftFaceTexture[] = {
 			0.0f, 1.0f,
 			1.0f, 1.0f,
 			1.0f, 0.0f,
@@ -158,17 +150,17 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 	if(getBlock(x, y + 1, z) == AIR)
 	{
 		//Top face
-		float topFace[] = {
-			-1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f,
-			-1.0f, 1.0f, -1.0f,	
+		const float topFace[] = {
+			-WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,	
 
-			1.0f, 1.0f, 1.0f,
-			1.0f, 1.0f, -1.0f,
-			-1.0f, 1.0f, -1.0f,	
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,	
 		};
 
-		float topFaceTexture[] = {
+		const float topFaceTexture[] = {
 			0.0f, 1.0f,
 			1.0f, 1.0f,
 			0.0f, 0.0f,	
@@ -184,17 +176,17 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 	if(getBlock(x, y - 1, z) == AIR)
 	{
 		//Bottom face
-		float bottomFace[] = {
-			-1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, 1.0f,
-			-1.0f, -1.0f, 1.0f,
+		const float bottomFace[] = {
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
 
-			-1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, 1.0f,	
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,	
 		};
 
-		float bottomFaceTexture[] = {
+		const float bottomFaceTexture[] = {
 			1.0f, 1.0f,
 			0.0f, 0.0f,
 			1.0f, 0.0f,
@@ -210,17 +202,17 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 	if(getBlock(x, y, z + 1) == AIR)
 	{				
 		//Front face
-		float frontFace[] = {
-			1.0f, 1.0f, 1.0f,
-			-1.0f, 1.0f, 1.0f,
-			-1.0f, -1.0f, 1.0f,
+		const float frontFace[] = {
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
 
-			1.0f, 1.0f, 1.0f,
-			-1.0f, -1.0f, 1.0f,
-			1.0f, -1.0f, 1.0f,		
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f,		
 		};
 
-		float frontFaceTexture[] = {
+		const float frontFaceTexture[] = {
 			1.0f, 0.0f,
 			0.0f, 0.0f,
 			0.0f, 1.0f,
@@ -236,17 +228,17 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 	if(getBlock(x, y, z - 1) == AIR)
 	{
 		//Back face
-		float backFace[] = {
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, 1.0f, -1.0f,
-			1.0f, 1.0f, -1.0f,
+		const float backFace[] = {
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
 
-			1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-			1.0f, 1.0f, -1.0f,	
+			WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			-WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,
+			WORLD_SCALE / 2.0f, WORLD_SCALE / 2.0f, -WORLD_SCALE / 2.0f,	
 		};
 
-		float backFaceTexture[] = {
+		const float backFaceTexture[] = {
 			1.0f, 1.0f,
 			1.0f, 0.0f,
 			0.0f, 0.0f,
@@ -264,20 +256,22 @@ void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 {
 	std::cerr << "Building chunk: " << chunkX << ", " << chunkZ << '\n';
 
-	uint32_t index = ((chunkX + worldSize / (2 * 16)) * (worldSize / 16 + 1) +
-					 (chunkZ + worldSize / (2 * 16)));
+	uint32_t index = ((chunkX + worldSize / (2 * CHUNK_SIZE)) * (worldSize / CHUNK_SIZE + 1) +
+					 (chunkZ + worldSize / (2 * CHUNK_SIZE)));
 	
 	std::vector<float> chunk;
 
-	int32_t worldChunkX = chunkX * 16,
-			worldChunkZ = chunkZ * 16;
+	int32_t worldChunkX = chunkX * CHUNK_SIZE,
+			worldChunkZ = chunkZ * CHUNK_SIZE;
 
-	for(int32_t x = worldChunkX; x < worldChunkX + 16; x++)
+	for(int32_t x = worldChunkX; x < worldChunkX + CHUNK_SIZE; x++)
 		for(int32_t y = 0; y < worldHeight; y++)
-			for(int32_t z = worldChunkZ; z < worldChunkZ + 16; z++)
+			for(int32_t z = worldChunkZ; z < worldChunkZ + CHUNK_SIZE; z++)
 				addBlockVertices(chunk, x, y, z);	
-
-	chunkVertexCount[index] = chunk.size() / 5;
+	
+	// 5 values per vertex
+	// (x, y, z) (textureX, textureY)
+	chunkVertexCount[index] = chunk.size() / 5;				
 
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2]);			
 	glBufferData(GL_ARRAY_BUFFER, 
@@ -296,19 +290,19 @@ void World::buildAllChunks()
 {
 	std::cerr << "Building all chunks...\n";
 
-	for(int32_t x = -(int32_t)worldSize / (2 * 16); x < (int32_t)worldSize / (2 * 16); x++)
-		for(int32_t z = -(int32_t)worldSize / (2 * 16); z < (int32_t)worldSize / (2 * 16); z++)
+	for(int32_t x = -(int32_t)worldSize / (2 * CHUNK_SIZE); x < (int32_t)worldSize / (2 * CHUNK_SIZE); x++)
+		for(int32_t z = -(int32_t)worldSize / (2 * CHUNK_SIZE); z < (int32_t)worldSize / (2 * CHUNK_SIZE); z++)
 			buildChunk(x, z);
 }
 
 void World::displayWorld()
 {
-	for(int32_t x = -(int32_t)worldSize / (2 * 16); x < (int32_t)worldSize / (2 * 16); x++)
+	for(int32_t x = -(int32_t)worldSize / (2 * CHUNK_SIZE); x < (int32_t)worldSize / (2 * CHUNK_SIZE); x++)
 	{
-		for(int32_t z = -(int32_t)worldSize / (2 * 16); z < (int32_t)worldSize / (2 * 16); z++)
+		for(int32_t z = -(int32_t)worldSize / (2 * CHUNK_SIZE); z < (int32_t)worldSize / (2 * CHUNK_SIZE); z++)
 		{
-			uint32_t index = ((x + worldSize / (2 * 16)) * (worldSize / 16 + 1) +
-					 (z + worldSize / (2 * 16)));		
+			uint32_t index = ((x + worldSize / (2 * CHUNK_SIZE)) * (worldSize / CHUNK_SIZE + 1) +
+					 (z + worldSize / (2 * CHUNK_SIZE)));		
 			
 			glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2]);					
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
