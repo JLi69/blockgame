@@ -11,7 +11,17 @@ WASD to move around
 
 Left click to destroy block
 
-Right click to place brick
+Right click to place block
+
+1 - Grass
+
+2 - Dirt
+
+3 - Stone
+
+4 - Brick
+
+5 - Wood Plank
 
 ## Build
 
@@ -24,6 +34,8 @@ Dependencies:
 [glad](https://glad.dav1d.de/) (included)
 
 [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) (included)
+
+[stb_perlin](https://github.com/nothings/stb/blob/master/stb_perlin.h) (included)
 
 ```
 mkdir build

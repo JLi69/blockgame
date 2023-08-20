@@ -18,9 +18,9 @@ void main()
 	} 
 	else if(fract(abs(fragPos.z)) == 0.0) 
 	{
-		outColor.r *= 0.8;
-		outColor.g *= 0.8;
-		outColor.b *= 0.8;
+		outColor.r *= 0.7;
+		outColor.g *= 0.7;
+		outColor.b *= 0.7;
 	}
 
 	if(fragPos.x / 2.0 + 0.5 - uSelected.x <= 1.0 &&
@@ -29,6 +29,6 @@ void main()
 	   fragPos.y / 2.0 + 0.5 - uSelected.y >= 0.0 &&
 	   fragPos.z / 2.0 + 0.5 - uSelected.z <= 1.0 &&
 	   fragPos.z / 2.0 + 0.5 - uSelected.z >= 0.0) {
-		outColor = mix(outColor, vec4(1.0, 1.0, 1.0, 1.0), 0.5);
+		outColor = mix(outColor, vec4(1.0, 1.0, 1.0, 1.0), 0.4);
 	}
 }

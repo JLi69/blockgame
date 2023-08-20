@@ -16,12 +16,14 @@ Hitbox::Hitbox()
 
 bool intersecting(Hitbox h1, Hitbox h2)
 {
-	return (h1.position.x + h1.dimensions.x / 2.0f) > (h2.position.x - h2.dimensions.x / 2.0f) &&
-		   (h1.position.x - h1.dimensions.x / 2.0f) < (h2.position.x + h2.dimensions.x / 2.0f) &&
-		   (h1.position.y + h1.dimensions.y / 2.0f) > (h2.position.y - h2.dimensions.y / 2.0f) &&
-		   (h1.position.y - h1.dimensions.y / 2.0f) < (h2.position.y + h2.dimensions.y / 2.0f) &&
-		   (h1.position.z + h1.dimensions.z / 2.0f) > (h2.position.z - h2.dimensions.z / 2.0f) &&
-		   (h1.position.z - h1.dimensions.z / 2.0f) < (h2.position.z + h2.dimensions.z / 2.0f); 
+	//Adding/subtracting 0.001 is just a quick hack to hopefully account
+	//for most floating point errors
+	return (h1.position.x + h1.dimensions.x / 2.0f) - 0.001f > (h2.position.x - h2.dimensions.x / 2.0f) &&
+		   (h1.position.x - h1.dimensions.x / 2.0f) + 0.001f < (h2.position.x + h2.dimensions.x / 2.0f) &&
+		   (h1.position.y + h1.dimensions.y / 2.0f) - 0.001f > (h2.position.y - h2.dimensions.y / 2.0f) &&
+		   (h1.position.y - h1.dimensions.y / 2.0f) + 0.001f < (h2.position.y + h2.dimensions.y / 2.0f) &&
+		   (h1.position.z + h1.dimensions.z / 2.0f) - 0.001f > (h2.position.z - h2.dimensions.z / 2.0f) &&
+		   (h1.position.z - h1.dimensions.z / 2.0f) + 0.001f < (h2.position.z + h2.dimensions.z / 2.0f); 
 }
 
 Hitbox uncollideX(Hitbox h1, Hitbox h2)
@@ -127,7 +129,7 @@ Hitbox searchForBlockCollision(Hitbox h, World &world)
 			hitBoxDimY = (int32_t)ceilf(h.dimensions.y) + 2,
 			hitBoxDimZ = (int32_t)ceilf(h.dimensions.z) + 2;
 
-	Hitbox block;
+	Hitbox block = Hitbox();
 
 	for(int32_t x = hitboxIntX - hitBoxDimX / 2; x <= hitboxIntX + hitBoxDimX / 2; x++)
 	{

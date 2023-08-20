@@ -1,6 +1,7 @@
-#ifndef __CAMERA_H__
+#ifndef __PLAYER_H__
 
 #include <glm/glm.hpp>
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include "world.hpp"
 #include "hitbox.hpp"
@@ -66,4 +67,4 @@ MovementDirection directionFromKey(
 
 #endif
 
-#define __CAMERA_H__
+#define __PLAYER_H__

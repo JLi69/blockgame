@@ -67,7 +67,7 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 			state->player.hitbox.position + glm::vec3(0.5f, 0.2f, 0.5f),
 			state->player.yaw,
 			state->player.pitch,
-			4.0f
+			5.0f
 		);
 
 		int32_t x = (int32_t)floorf(pos.x),
@@ -104,7 +104,7 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 			state->player.hitbox.position + glm::vec3(0.5f, 0.2f, 0.5f),
 			state->player.yaw,
 			state->player.pitch,
-			4.0f
+			5.0f
 		);
 
 		int32_t x = (int32_t)floorf(pos.x),
@@ -264,7 +264,7 @@ int main()
 				gameState.player.hitbox.position + glm::vec3(0.5f, 0.2f, 0.5f),
 				gameState.player.yaw,
 				gameState.player.pitch,
-				4.0f
+				5.0f
 			);
 
 			gameState.selected = glm::vec3(floorf(pos.x), floorf(pos.y), floorf(pos.z));
@@ -303,8 +303,13 @@ int main()
 		double end = glfwGetTime();
 		dt = end - start;
 
+		std::cerr << "Player position: " << 
+					 gameState.player.hitbox.position.x << ", " <<
+					 gameState.player.hitbox.position.y << ", " <<
+					 gameState.player.hitbox.position.z << '\n';
 		std::cerr << "Time to draw frame: " << dt << " | FPS: " << 1.0 / dt << '\n';
 	}
 
+	gameState.world.deleteBuffers();
 	glfwTerminate();
 }

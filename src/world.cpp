@@ -2,6 +2,8 @@
 #include <glad/glad.h>
 #include <math.h>
 #include <iostream>
+#define STB_PERLIN_IMPLEMENTATION
+#include <stb_perlin.h>
 
 World::World(uint32_t size, uint32_t height)
 {
@@ -17,7 +19,9 @@ World::World(uint32_t size, uint32_t height)
 
 World::~World()
 {
-	//glDeleteBuffers((worldSize / 16 + 1) * (worldSize / 16 + 1) * 2, buffers);
+	if(buffers != nullptr)
+		glDeleteBuffers((worldSize / CHUNK_SIZE + 1) * (worldSize / CHUNK_SIZE + 1) * 2, buffers);
+
 	delete[] blocks;
 	delete[] buffers;
 	delete[] chunkVertexCount;
@@ -26,6 +30,8 @@ World::~World()
 void World::generateWorld()
 {
 	std::cerr << "Building terrain...\n";
+	const float FREQUENCY = 128.0f;
+	const float CAVE_FREQUENCY = 16.0f;
 	// Fill in the world with blocks
 	for(int32_t x = -(int32_t)worldSize / 2; x < (int32_t)worldSize / 2; x++)
 	{
@@ -33,14 +39,46 @@ void World::generateWorld()
 		{
 			for(int32_t z = -(int32_t)worldSize / 2; z < (int32_t)worldSize / 2; z++)
 			{
-				if(y == worldHeight / 2 - 1)
+				float height = stb_perlin_fbm_noise3(
+					(float)x / FREQUENCY,
+					0.0f,
+					(float)z / FREQUENCY,
+					2.0f,
+					0.5f,
+					4
+				);
+
+				bool negative = height < 0.0f;
+				height *= height;
+				if(negative)
+					height *= -1.25f;
+				else
+					height *= 1.25f;
+			
+				if(y == (int)(64.0f + 32.0f * height))
 					setBlock(x, y, z, GRASS);
-				else if(y < worldHeight / 2 - 1 && y >= worldHeight / 2 - 4)
+				else if(y <= (int)(64.0f + 32.0f * height) - 1 && 
+						y >= (int)(64.0f + 32.0f * height) - 4)
 					setBlock(x, y, z, DIRT);	
-				else if(y < worldHeight / 2 - 4)
+				else if(y < (int)(64.0f + 32.0f * height) - 4)
 					setBlock(x, y, z, STONE);
 				else
 					setBlock(x, y, z, AIR);
+
+				float cave = stb_perlin_noise3(
+					(float)x / CAVE_FREQUENCY, 
+					(float)y / CAVE_FREQUENCY,
+					(float)z / CAVE_FREQUENCY,
+					0,
+					0,
+					0
+				);
+
+				if(cave < -0.75f + 0.6f * (1.0f - float(y) / float(worldHeight)))
+					setBlock(x, y, z, AIR);
+
+				if(y == 0)
+					setBlock(x, y, z, STONE);
 			}
 		}
 	}
@@ -299,6 +337,8 @@ void World::buildAllChunks()
 
 void World::displayWorld()
 {
+	int triangleCount = 0;
+
 	for(int32_t x = -(int32_t)worldSize / (2 * CHUNK_SIZE); x < (int32_t)worldSize / (2 * CHUNK_SIZE); x++)
 	{
 		for(int32_t z = -(int32_t)worldSize / (2 * CHUNK_SIZE); z < (int32_t)worldSize / (2 * CHUNK_SIZE); z++)
@@ -313,8 +353,12 @@ void World::displayWorld()
 			glEnableVertexAttribArray(0);			
 			glEnableVertexAttribArray(1);
 			glDrawArrays(GL_TRIANGLES, 0, chunkVertexCount[index]);
+
+			triangleCount += chunkVertexCount[index] / 3;
 		}
 	}
+
+	std::cout << "Triangles rendered: " << triangleCount << '\n';
 }
 
 glm::vec3 raycast(World &world, glm::vec3 start, float yaw, float pitch, float maxdist)
@@ -339,4 +383,10 @@ glm::vec3 raycast(World &world, glm::vec3 start, float yaw, float pitch, float m
 	}
 
 	return currentPos;
+}
+
+void World::deleteBuffers()
+{
+	glDeleteBuffers((worldSize / CHUNK_SIZE + 1) * (worldSize / CHUNK_SIZE + 1) * 2, buffers);
+	buffers = nullptr;
 }

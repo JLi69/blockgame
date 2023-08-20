@@ -3,6 +3,9 @@
 #include <math.h>
 #include "hitbox.hpp"
 
+#include <iostream>
+#include <iomanip>
+
 Player::Player(glm::vec3 position, glm::vec3 dimensions, float camSpeed)
 {
 	hitbox = Hitbox(position, dimensions);
@@ -65,7 +68,7 @@ void Player::handleKeyInput(int key, int action)
 	//Respawn
 	if(key == GLFW_KEY_R && action == GLFW_PRESS)
 	{
-		hitbox.position = glm::vec3(0.0f, 256.0f, 0.0f);
+		hitbox.position = glm::vec3(0.0f, 128.0f, 0.0f);
 		yvelocity = 0.0f;
 	}
 }
@@ -157,7 +160,7 @@ void Player::move(float dt, World &world)
 
 	if(hitbox.position.y < -256.0f)
 	{
-		hitbox.position = glm::vec3(0.0f, 256.0f, 0.0f);
+		hitbox.position = glm::vec3(0.0f, 128.0f, 0.0f);
 		yvelocity = 0.0f;	
 	}
 
@@ -204,6 +207,7 @@ void Player::move(float dt, World &world)
 
 	hitbox.position.x += velocity.x * dt;
 	block = searchForBlockCollision(hitbox, world);	
+
 	hitbox = uncollideX(hitbox, block);
 
 	hitbox.position.z += velocity.z * dt;	

@@ -18,11 +18,11 @@ const float WORLD_SCALE = 2.0f;
 
 class World
 {
-	uint8_t *blocks;
+	uint8_t *blocks = nullptr;
 	uint32_t worldSize, worldHeight;
 
-	unsigned int *buffers;
-	unsigned int *chunkVertexCount;
+	unsigned int *buffers = nullptr;
+	unsigned int *chunkVertexCount = nullptr;
 
 	void addBlockVertices(std::vector<float> &chunk,
 						  int32_t x, 
@@ -41,7 +41,9 @@ public:
 	void setBlock(int32_t x, int32_t y, int32_t z, uint8_t block);
 	void buildChunk(int32_t chunkX, int32_t chunkZ);
 	void buildAllChunks();
-	void displayWorld();	
+	void displayWorld();
+	//Call this before deleting the object
+	void deleteBuffers();
 };
 
 glm::vec3 raycast(World &world, glm::vec3 start, float yaw, float pitch, float maxdist);

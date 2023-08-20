@@ -1,2 +1,3 @@
 gcc
 %cpp -Ilib/stb_image
+%cpp -Ilib/stb_perlin
