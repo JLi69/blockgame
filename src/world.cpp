@@ -14,6 +14,9 @@ World::World(uint32_t size, uint32_t height)
 	buffers = new unsigned int[(size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1) * 2];	
 	chunkVertexCount = new unsigned int[(size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1)];
 
+	for(int i = 0; i < (size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1); i++)
+		chunkVertexCount[i] = 0;
+
 	glGenBuffers((size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1) * 2, buffers);
 }
 
@@ -294,11 +297,16 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 
 void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 {
+	int32_t index = ((chunkX + worldSize / (2 * CHUNK_SIZE)) * (worldSize / CHUNK_SIZE + 1) +
+					 (chunkZ + worldSize / (2 * CHUNK_SIZE)));
+
+	//Bounds check
+	if(chunkX < -int32_t(worldSize) / (2 * CHUNK_SIZE) || chunkZ < -int32_t(worldSize) / (2 * CHUNK_SIZE) ||
+	   chunkX >= int32_t(worldSize) / (2 * CHUNK_SIZE) || chunkZ >= int32_t(worldSize) / (2 * CHUNK_SIZE))
+		return;
+
 	std::cerr << "Building chunk: " << chunkX << ", " << chunkZ << '\n';
 
-	uint32_t index = ((chunkX + worldSize / (2 * CHUNK_SIZE)) * (worldSize / CHUNK_SIZE + 1) +
-					 (chunkZ + worldSize / (2 * CHUNK_SIZE)));
-	
 	std::vector<float> chunk;
 
 	int32_t worldChunkX = chunkX * CHUNK_SIZE,
