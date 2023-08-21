@@ -34,9 +34,19 @@ void handleKeyInput(GLFWwindow *win, int key, int scancode, int action, int mods
 	//Release cursor
 	if(key == GLFW_KEY_ESCAPE)	
 		glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
 	State *state = (State*)glfwGetWindowUserPointer(win);
 	state->player.handleKeyInput(key, action);
 	state->player.selectBlock(key);
+
+	//Output player position
+	if(key == GLFW_KEY_P && action == GLFW_PRESS)
+	{
+		std::cerr << "Player position: " << 
+					 state->player.hitbox.position.x << ", " <<
+					 state->player.hitbox.position.y << ", " <<
+					 state->player.hitbox.position.z << '\n';
+	}
 };
 
 void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
@@ -242,6 +252,11 @@ int main()
 	gameState.world.generateWorld();
 	gameState.world.buildAllChunks();		
 
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	int framesDrawn = 0;
+	double frameTimer = 0.0;
+
 	while(!glfwWindowShouldClose(win))
 	{
 		double start = glfwGetTime();
@@ -253,7 +268,7 @@ int main()
 		glm::mat4 view = gameState.player.getCamera().viewMatrix();
 		glUniformMatrix4fv(program.getUniformLocation("uPerspectiveViewMat"), 1, GL_FALSE, glm::value_ptr(gameState.persp * view));
 		glUniformMatrix4fv(program.getUniformLocation("uTransformMat"), 1, GL_FALSE, glm::value_ptr(trans));	
-		gameState.world.displayWorld();
+		int triCount = gameState.world.displayWorld();
 
 		//Update camera
 		gameState.player.move((float)dt, gameState.world);
@@ -303,11 +318,15 @@ int main()
 		double end = glfwGetTime();
 		dt = end - start;
 
-		std::cerr << "Player position: " << 
-					 gameState.player.hitbox.position.x << ", " <<
-					 gameState.player.hitbox.position.y << ", " <<
-					 gameState.player.hitbox.position.z << '\n';
-		std::cerr << "Time to draw frame: " << dt << " | FPS: " << 1.0 / dt << '\n';
+		frameTimer += dt;
+		if(frameTimer > 1.0)
+		{
+			std::cerr << "FPS: " << framesDrawn 
+					  << " |  Triangles drawn: (" << triCount << ") \n";
+			framesDrawn = 0;
+			frameTimer = 0.0;
+		}
+		framesDrawn++;
 	}
 
 	gameState.world.deleteBuffers();

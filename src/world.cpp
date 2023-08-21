@@ -11,23 +11,21 @@ World::World(uint32_t size, uint32_t height)
 	worldSize = size;
 	worldHeight = height;
 
-	buffers = new unsigned int[(size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1) * 2];	
-	chunkVertexCount = new unsigned int[(size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1)];
+	buffers = std::vector<unsigned int>((size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1) * 2);	
+	chunkVertexCount = std::vector<unsigned int>((size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1));
+	chunkVaos = std::vector<unsigned int>((size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1));
 
 	for(int i = 0; i < (size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1); i++)
 		chunkVertexCount[i] = 0;
 
-	glGenBuffers((size / CHUNK_SIZE + 1) * (size / CHUNK_SIZE + 1) * 2, buffers);
+	glGenBuffers(buffers.size(), buffers.data());
+	glGenVertexArrays(chunkVaos.size(), chunkVaos.data());
 }
 
 World::~World()
 {
-	if(buffers != nullptr)
-		glDeleteBuffers((worldSize / CHUNK_SIZE + 1) * (worldSize / CHUNK_SIZE + 1) * 2, buffers);
-
+	deleteBuffers();
 	delete[] blocks;
-	delete[] buffers;
-	delete[] chunkVertexCount;
 }
 
 void World::generateWorld()
@@ -307,6 +305,8 @@ void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 
 	std::cerr << "Building chunk: " << chunkX << ", " << chunkZ << '\n';
 
+	glBindVertexArray(chunkVaos.at(index));
+
 	std::vector<float> chunk;
 
 	int32_t worldChunkX = chunkX * CHUNK_SIZE,
@@ -319,19 +319,23 @@ void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 	
 	// 5 values per vertex
 	// (x, y, z) (textureX, textureY)
-	chunkVertexCount[index] = chunk.size() / 5;				
+	chunkVertexCount.at(index) = chunk.size() / 5;				
 
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2]);			
+	glBindBuffer(GL_ARRAY_BUFFER, buffers.at(index * 2));			
 	glBufferData(GL_ARRAY_BUFFER, 
 		 chunk.size() * sizeof(float), 
 		 chunk.data(),
 		 GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
+	glEnableVertexAttribArray(0);			
 
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2 + 1]);	
+	glBindBuffer(GL_ARRAY_BUFFER, buffers.at(index * 2 + 1));	
 	glBufferData(GL_ARRAY_BUFFER, 
 		 chunk.size() * sizeof(float), 
 		 chunk.data(),
 		 GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
+	glEnableVertexAttribArray(1);
 }
 
 void World::buildAllChunks()
@@ -343,7 +347,7 @@ void World::buildAllChunks()
 			buildChunk(x, z);
 }
 
-void World::displayWorld()
+int World::displayWorld()
 {
 	int triangleCount = 0;
 
@@ -354,19 +358,14 @@ void World::displayWorld()
 			uint32_t index = ((x + worldSize / (2 * CHUNK_SIZE)) * (worldSize / CHUNK_SIZE + 1) +
 					 (z + worldSize / (2 * CHUNK_SIZE)));		
 			
-			glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2]);					
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
-			glBindBuffer(GL_ARRAY_BUFFER, buffers[index * 2 + 1]);		
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
-			glEnableVertexAttribArray(0);			
-			glEnableVertexAttribArray(1);
-			glDrawArrays(GL_TRIANGLES, 0, chunkVertexCount[index]);
+			glBindVertexArray(chunkVaos.at(index));
+			glDrawArrays(GL_TRIANGLES, 0, chunkVertexCount.at(index));
 
-			triangleCount += chunkVertexCount[index] / 3;
+			triangleCount += chunkVertexCount.at(index) / 3;
 		}
 	}
 
-	std::cout << "Triangles rendered: " << triangleCount << '\n';
+	return triangleCount;
 }
 
 glm::vec3 raycast(World &world, glm::vec3 start, float yaw, float pitch, float maxdist)
@@ -395,6 +394,15 @@ glm::vec3 raycast(World &world, glm::vec3 start, float yaw, float pitch, float m
 
 void World::deleteBuffers()
 {
-	glDeleteBuffers((worldSize / CHUNK_SIZE + 1) * (worldSize / CHUNK_SIZE + 1) * 2, buffers);
-	buffers = nullptr;
+	if(buffers.size() != 0)
+	{
+		glDeleteBuffers(buffers.size(), buffers.data());
+		buffers.clear();
+	}
+
+	if(chunkVaos.size() != 0)
+	{
+		glDeleteVertexArrays(chunkVaos.size(), chunkVaos.data());
+		chunkVaos.clear();
+	}
 }

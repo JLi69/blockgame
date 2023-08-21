@@ -21,8 +21,9 @@ class World
 	uint8_t *blocks = nullptr;
 	uint32_t worldSize, worldHeight;
 
-	unsigned int *buffers = nullptr;
-	unsigned int *chunkVertexCount = nullptr;
+	std::vector<unsigned int> buffers;
+	std::vector<unsigned int> chunkVertexCount;
+	std::vector<unsigned int> chunkVaos;
 
 	void addBlockVertices(std::vector<float> &chunk,
 						  int32_t x, 
@@ -41,7 +42,8 @@ public:
 	void setBlock(int32_t x, int32_t y, int32_t z, uint8_t block);
 	void buildChunk(int32_t chunkX, int32_t chunkZ);
 	void buildAllChunks();
-	void displayWorld();
+	//Returns the number of triangles drawn	
+	int displayWorld();
 	//Call this before deleting the object
 	void deleteBuffers();
 };
