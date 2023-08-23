@@ -44,7 +44,8 @@ public:
 	void buildChunk(int32_t chunkX, int32_t chunkZ);
 	void buildAllChunks();
 	//Returns the number of triangles drawn	
-	int displayWorld(Frustum viewFrustum);
+	//renderDist is in chunks
+	int displayWorld(Frustum viewFrustum, glm::vec3 camPos, uint32_t renderDist);
 	//Call this before deleting the object
 	void deleteBuffers();
 };

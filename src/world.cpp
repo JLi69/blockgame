@@ -347,7 +347,7 @@ void World::buildAllChunks()
 			buildChunk(x, z);
 }
 
-int World::displayWorld(Frustum viewFrustum)
+int World::displayWorld(Frustum viewFrustum, glm::vec3 camPos, uint32_t renderDist)
 {
 	int triangleCount = 0;
 
@@ -364,6 +364,11 @@ int World::displayWorld(Frustum viewFrustum)
 				glm::vec3(CHUNK_SIZE, worldHeight, CHUNK_SIZE)
 			);
 
+			uint32_t distX = uint32_t(fabs((chunkBoundingBox.position.x - camPos.x / WORLD_SCALE) / CHUNK_SIZE)),
+					 distZ = uint32_t(fabs((chunkBoundingBox.position.z - camPos.z / WORLD_SCALE) / CHUNK_SIZE));
+			if(distX > renderDist || distZ > renderDist)
+				continue;
+			
 			if(!hitboxIntersectsFrustum(viewFrustum, chunkBoundingBox))
 				continue;
 

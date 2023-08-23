@@ -18,6 +18,7 @@ const float FOV = 75.0f / 180.0f * 3.14159f; //In radians
 const float ZNEAR = 0.1f;
 const float ZFAR = 1024.0f;
 const int WORLD_SIZE = 256;
+const uint32_t RENDER_DIST = WORLD_SIZE / (CHUNK_SIZE * 2);
 
 struct State
 {
@@ -297,7 +298,11 @@ int main()
 			windowAspectRatio(win)
 		);
 
-		int triCount = gameState.world.displayWorld(viewFrustum);
+		int triCount = gameState.world.displayWorld(
+			viewFrustum, 
+			gameState.player.getCamera().position, 
+			RENDER_DIST
+		);
 
 		//Update camera
 		gameState.player.move((float)dt, gameState.world);
