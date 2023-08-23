@@ -14,6 +14,11 @@
 #include "world.hpp"
 #include "hitbox.hpp"
 
+const float FOV = 75.0f / 180.0f * 3.14159f; //In radians
+const float ZNEAR = 0.1f;
+const float ZFAR = 1024.0f;
+const int WORLD_SIZE = 256;
+
 struct State
 {
 	Player player;
@@ -22,12 +27,27 @@ struct State
 	glm::vec3 selected;
 };
 
+float windowAspectRatio(GLFWwindow *win)
+{
+	int w, h;
+	glfwGetWindowSize(win, &w, &h);
+
+	if(h == 0)
+		return 0;
+	
+	return (float)w / (float)h;
+}
+
 void handleWindowResize(GLFWwindow *win, int newWidth, int newHeight)
 {
 	glViewport(0, 0, newWidth, newHeight);	
 	State *state = (State*)glfwGetWindowUserPointer(win);
+	
+	if(newHeight == 0)
+		return;
+
 	state->persp = 
-		glm::perspective(75.0f / 180.0f * 3.14159f, (float)newWidth / (float)newHeight, 0.1f, 1000.0f);
+		glm::perspective(FOV, (float)newWidth / (float)newHeight, ZNEAR, ZFAR);
 }
 
 void handleKeyInput(GLFWwindow *win, int key, int scancode, int action, int mods) {
@@ -165,7 +185,7 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 }
 
 int main()
-{		
+{			
 	//Try to initialize glfw
 	if(!glfwInit())
 	{
@@ -201,8 +221,8 @@ int main()
 
 	State gameState = {
 		.player = Player(playerPosition, playerDimensions, 4.0f),
-		.persp = glm::perspective(75.0f / 180.0f * 3.14159f, 800.0f / 600.0f, 0.1f, 1000.0f),
-		.world = World(256, 128),
+		.persp = glm::perspective(FOV, windowAspectRatio(win), ZNEAR, ZFAR),
+		.world = World(WORLD_SIZE, 128),
 		.selected = glm::vec3(0.0f, 0.0f, 0.0f)
 	};
 	glfwSetWindowUserPointer(win, &gameState);
@@ -267,8 +287,17 @@ int main()
 		glm::mat4 trans = glm::mat4(1.0f);	
 		glm::mat4 view = gameState.player.getCamera().viewMatrix();
 		glUniformMatrix4fv(program.getUniformLocation("uPerspectiveViewMat"), 1, GL_FALSE, glm::value_ptr(gameState.persp * view));
-		glUniformMatrix4fv(program.getUniformLocation("uTransformMat"), 1, GL_FALSE, glm::value_ptr(trans));	
-		int triCount = gameState.world.displayWorld();
+		glUniformMatrix4fv(program.getUniformLocation("uTransformMat"), 1, GL_FALSE, glm::value_ptr(trans));
+
+		Frustum viewFrustum = createFrustumFromCamera(
+			gameState.player.getCamera(),
+			FOV,
+			ZNEAR,
+			ZFAR,
+			windowAspectRatio(win)
+		);
+
+		int triCount = gameState.world.displayWorld(viewFrustum);
 
 		//Update camera
 		gameState.player.move((float)dt, gameState.world);

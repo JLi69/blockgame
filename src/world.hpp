@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <vector>
 #include <glm/glm.hpp>
+#include "hitbox.hpp"
 
 enum Blocks : uint8_t
 {
@@ -43,12 +44,16 @@ public:
 	void buildChunk(int32_t chunkX, int32_t chunkZ);
 	void buildAllChunks();
 	//Returns the number of triangles drawn	
-	int displayWorld();
+	int displayWorld(Frustum viewFrustum);
 	//Call this before deleting the object
 	void deleteBuffers();
 };
 
+//Returns the hitbox of a block that the hitbox is colliding with
+Hitbox searchForBlockCollision(Hitbox h, World &world);
+
 glm::vec3 raycast(World &world, glm::vec3 start, float yaw, float pitch, float maxdist);
+
 void addVertices(std::vector<float> &chunk, 
 				 const float vertices[],
 				 const float textureCoords[],

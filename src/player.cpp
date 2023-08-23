@@ -232,3 +232,57 @@ glm::mat4 Camera::viewMatrix()
 		   glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f)) *
 		   glm::translate(glm::mat4(1.0f), -position);
 }
+
+glm::vec3 Camera::forward()
+{
+	return glm::normalize(glm::vec3(
+					 cosf(pitch) * sinf(yaw),
+					 sinf(-pitch),
+					 cosf(pitch) * -cosf(yaw)));
+}
+
+glm::vec3 Camera::right()
+{
+	return glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), forward()));
+}
+
+glm::vec3 Camera::up()
+{	
+	return glm::normalize(glm::cross(forward(), right()));
+}
+
+Frustum createFrustumFromCamera(
+	Camera cam,
+	float fov,
+	float znear,
+	float zfar,
+	float aspect)
+{
+	Frustum viewFrustum;
+
+	viewFrustum.near = Plane(cam.position / WORLD_SCALE + znear * cam.forward(), cam.forward());	
+	viewFrustum.far = Plane(cam.position / WORLD_SCALE + zfar * cam.forward(), -cam.forward());
+
+	float halfFarHeight = zfar * tanf(fov / 2.0f),
+		  halfFarWidth = halfFarHeight * aspect;
+
+	viewFrustum.left = Plane(
+		cam.position / WORLD_SCALE,
+		glm::cross(cam.up(), cam.forward() * zfar - halfFarWidth * cam.right())
+	);
+	viewFrustum.right = Plane(
+		cam.position / WORLD_SCALE,
+		glm::cross(cam.forward() * zfar + halfFarWidth * cam.right(), cam.up())
+	);
+
+	viewFrustum.top = Plane(
+		cam.position / WORLD_SCALE,
+		glm::cross(cam.forward() * zfar - halfFarHeight * cam.up(), cam.right())
+	);
+	viewFrustum.bottom = Plane(
+		cam.position / WORLD_SCALE,
+		glm::cross(cam.right(), cam.forward() * zfar + halfFarHeight * cam.up())
+	);
+
+	return viewFrustum;
+}

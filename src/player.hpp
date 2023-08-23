@@ -26,6 +26,10 @@ struct Camera
 	float pitch = 0.0f;
 	float yaw = 0.0f;
 	glm::mat4 viewMatrix();
+
+	glm::vec3 forward();
+	glm::vec3 right();
+	glm::vec3 up();
 };
 
 class Player
@@ -64,6 +68,13 @@ MovementDirection directionFromKey(
 		MovementDirection currentDirection,
 		int key, 
 		MovementDirection targetDirection);
+
+Frustum createFrustumFromCamera(
+	Camera cam, 
+	float fov, 
+	float znear, 
+	float zfar, 
+	float aspect);
 
 #endif
 

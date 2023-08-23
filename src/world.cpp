@@ -347,7 +347,7 @@ void World::buildAllChunks()
 			buildChunk(x, z);
 }
 
-int World::displayWorld()
+int World::displayWorld(Frustum viewFrustum)
 {
 	int triangleCount = 0;
 
@@ -355,6 +355,18 @@ int World::displayWorld()
 	{
 		for(int32_t z = -(int32_t)worldSize / (2 * CHUNK_SIZE); z < (int32_t)worldSize / (2 * CHUNK_SIZE); z++)
 		{
+			Hitbox chunkBoundingBox = Hitbox(
+				glm::vec3(
+					float(x) * CHUNK_SIZE + CHUNK_SIZE / 2.0f,
+					worldHeight / 2.0f,
+					float(z) * CHUNK_SIZE + CHUNK_SIZE / 2.0f
+				),
+				glm::vec3(CHUNK_SIZE, worldHeight, CHUNK_SIZE)
+			);
+
+			if(!hitboxIntersectsFrustum(viewFrustum, chunkBoundingBox))
+				continue;
+
 			uint32_t index = ((x + worldSize / (2 * CHUNK_SIZE)) * (worldSize / CHUNK_SIZE + 1) +
 					 (z + worldSize / (2 * CHUNK_SIZE)));		
 			
@@ -405,4 +417,36 @@ void World::deleteBuffers()
 		glDeleteVertexArrays(chunkVaos.size(), chunkVaos.data());
 		chunkVaos.clear();
 	}
+}
+
+Hitbox searchForBlockCollision(Hitbox h, World &world)
+{
+	int32_t hitboxIntX = (int32_t)floorf(h.position.x),
+			hitboxIntY = (int32_t)floorf(h.position.y),
+			hitboxIntZ = (int32_t)floorf(h.position.z);
+
+	int32_t hitBoxDimX = (int32_t)ceilf(h.dimensions.x) + 2,
+			hitBoxDimY = (int32_t)ceilf(h.dimensions.y) + 2,
+			hitBoxDimZ = (int32_t)ceilf(h.dimensions.z) + 2;
+
+	Hitbox block = Hitbox();
+
+	for(int32_t x = hitboxIntX - hitBoxDimX / 2; x <= hitboxIntX + hitBoxDimX / 2; x++)
+	{
+		for(int32_t y = hitboxIntY - hitBoxDimY / 2; y <= hitboxIntY + hitBoxDimY / 2; y++)
+		{
+			for(int32_t z = hitboxIntZ - hitBoxDimZ / 2; z <= hitboxIntZ + hitBoxDimZ / 2; z++)
+			{
+				block = Hitbox(
+					glm::vec3(x, y + 0.5f, z),
+					glm::vec3(1.0f, 1.0f, 1.0f)
+				);
+
+				if(world.getBlock(x, y, z) != AIR && intersecting(h, block))
+					return block;
+			}		
+		}
+	}
+
+	return Hitbox(); 
 }

@@ -1,6 +1,5 @@
 #ifndef __HITBOX_H__
 #include <glm/glm.hpp>
-#include "world.hpp"
 
 struct Hitbox
 {
@@ -16,8 +15,29 @@ Hitbox uncollideX(Hitbox h1, Hitbox h2);
 Hitbox uncollideY(Hitbox h1, Hitbox h2);
 Hitbox uncollideZ(Hitbox h1, Hitbox h2);
 
-//Returns the hitbox of a block that the hitbox is colliding with
-Hitbox searchForBlockCollision(Hitbox h, World &world);
+struct Plane
+{
+	float distance; //Distance of origin (0, 0, 0) to closest point on the plane
+	glm::vec3 normal; //Vector that is normal to the plane (has length 1)
+	//point = arbitrary point on plane
+	//norm = plane's normal vector
+	Plane(glm::vec3 point, glm::vec3 norm);
+	Plane();
+	float signedDistToPlane(glm::vec3 point);
+};
+
+struct Frustum
+{
+	Plane near,
+		  far,
+		  left,
+		  right,
+		  top,
+		  bottom;
+};
+
+bool hitboxOnOrForwardPlane(Plane plane, Hitbox hitbox);
+bool hitboxIntersectsFrustum(Frustum frustum, Hitbox hitbox);
 
 #endif
 

@@ -1,5 +1,5 @@
 #include "hitbox.hpp"
-
+#include <math.h>
 #include <iostream>
 
 Hitbox::Hitbox(glm::vec3 pos, glm::vec3 dim)
@@ -119,34 +119,41 @@ Hitbox uncollideZ(Hitbox h1, Hitbox h2)
 	return h1;
 }
 
-Hitbox searchForBlockCollision(Hitbox h, World &world)
+Plane::Plane(glm::vec3 point, glm::vec3 norm)
 {
-	int32_t hitboxIntX = (int32_t)floorf(h.position.x),
-			hitboxIntY = (int32_t)floorf(h.position.y),
-			hitboxIntZ = (int32_t)floorf(h.position.z);
+	normal = glm::normalize(norm);
+	distance = glm::dot(normal, point);
+}
 
-	int32_t hitBoxDimX = (int32_t)ceilf(h.dimensions.x) + 2,
-			hitBoxDimY = (int32_t)ceilf(h.dimensions.y) + 2,
-			hitBoxDimZ = (int32_t)ceilf(h.dimensions.z) + 2;
+Plane::Plane()
+{
+	normal = glm::vec3(0.0f);
+	distance = 0.0f;
+}
 
-	Hitbox block = Hitbox();
+float Plane::signedDistToPlane(glm::vec3 point)
+{
+	return glm::dot(point, normal) - distance;
+}
 
-	for(int32_t x = hitboxIntX - hitBoxDimX / 2; x <= hitboxIntX + hitBoxDimX / 2; x++)
-	{
-		for(int32_t y = hitboxIntY - hitBoxDimY / 2; y <= hitboxIntY + hitBoxDimY / 2; y++)
-		{
-			for(int32_t z = hitboxIntZ - hitBoxDimZ / 2; z <= hitboxIntZ + hitBoxDimZ / 2; z++)
-			{
-				block = Hitbox(
-					glm::vec3(x, y + 0.5f, z),
-					glm::vec3(1.0f, 1.0f, 1.0f)
-				);
+bool hitboxOnOrForwardPlane(Plane plane, Hitbox hitbox)
+{
+	glm::vec3 extents = hitbox.dimensions / 2.0f;
+	float hitboxCenterDist = plane.signedDistToPlane(hitbox.position);
+	float r = glm::dot(
+		extents, 
+		glm::vec3(fabs(plane.normal.x), fabs(plane.normal.y), fabs(plane.normal.z))
+	);
 
-				if(world.getBlock(x, y, z) != AIR && intersecting(h, block))
-					return block;
-			}		
-		}
-	}
+	return -r <= hitboxCenterDist;
+}
 
-	return Hitbox(); 
+bool hitboxIntersectsFrustum(Frustum frustum, Hitbox hitbox)
+{
+	return hitboxOnOrForwardPlane(frustum.near, hitbox) &&
+		   hitboxOnOrForwardPlane(frustum.far, hitbox) &&
+		   hitboxOnOrForwardPlane(frustum.left, hitbox) &&
+		   hitboxOnOrForwardPlane(frustum.right, hitbox) &&
+		   hitboxOnOrForwardPlane(frustum.top, hitbox) &&
+		   hitboxOnOrForwardPlane(frustum.bottom, hitbox);
 }
