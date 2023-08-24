@@ -270,8 +270,15 @@ int main()
 	glfwGetCursorPos(win, &mousex, &mousey);
 
 	//Create world
-	gameState.world.generateWorld();
-	gameState.world.buildAllChunks();		
+	{
+		double start = glfwGetTime();
+		gameState.world.generateWorld();
+		std::cerr << "Time to generate world: " << glfwGetTime() - start << " sec \n";
+		
+		start = glfwGetTime();
+		gameState.world.buildAllChunks();		
+		std::cerr << "Time to build chunks: " << glfwGetTime() - start << " sec \n";
+	}
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 

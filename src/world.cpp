@@ -4,6 +4,7 @@
 #include <iostream>
 #define STB_PERLIN_IMPLEMENTATION
 #include <stb_perlin.h>
+#include <thread>
 
 World::World(uint32_t size, uint32_t height)
 {
@@ -31,14 +32,15 @@ World::~World()
 void World::generateWorld()
 {
 	std::cerr << "Building terrain...\n";
-	const float FREQUENCY = 128.0f;
-	const float CAVE_FREQUENCY = 16.0f;
-	// Fill in the world with blocks
-	for(int32_t x = -(int32_t)worldSize / 2; x < (int32_t)worldSize / 2; x++)
-	{
-		for(int32_t y = 0; y < (int32_t)worldHeight; y++)
-		{
-			for(int32_t z = -(int32_t)worldSize / 2; z < (int32_t)worldSize / 2; z++)
+
+	auto generateChunk = [this](int32_t chunkX, int32_t chunkZ) {
+		const float FREQUENCY = 128.0f;
+		const float CAVE_FREQUENCY = 16.0f;
+
+		// Fill in the world with blocks
+		for(int32_t x = chunkX * CHUNK_SIZE; x < chunkX * CHUNK_SIZE + CHUNK_SIZE; x++)
+		{	
+			for(int32_t z = chunkZ * CHUNK_SIZE; z < chunkZ * CHUNK_SIZE + CHUNK_SIZE; z++)
 			{
 				float height = stb_perlin_fbm_noise3(
 					(float)x / FREQUENCY,
@@ -55,34 +57,49 @@ void World::generateWorld()
 					height *= -1.25f;
 				else
 					height *= 1.25f;
-			
-				if(y == (int)(64.0f + 32.0f * height))
-					setBlock(x, y, z, GRASS);
-				else if(y <= (int)(64.0f + 32.0f * height) - 1 && 
-						y >= (int)(64.0f + 32.0f * height) - 4)
-					setBlock(x, y, z, DIRT);	
-				else if(y < (int)(64.0f + 32.0f * height) - 4)
-					setBlock(x, y, z, STONE);
-				else
-					setBlock(x, y, z, AIR);
 
-				float cave = stb_perlin_noise3(
-					(float)x / CAVE_FREQUENCY, 
-					(float)y / CAVE_FREQUENCY,
-					(float)z / CAVE_FREQUENCY,
-					0,
-					0,
-					0
-				);
+				height *= 32.0f;
+				height += 64.0f;
 
-				if(cave < -0.75f + 0.6f * (1.0f - float(y) / float(worldHeight)))
-					setBlock(x, y, z, AIR);
+				for(int32_t y = 0; y <= (int32_t)height; y++)
+				{			
+					if(y == (int)height)
+						setBlock(x, y, z, GRASS);
+					else if(y <= (int)height - 1 && 
+							y >= (int)height - 4)
+						setBlock(x, y, z, DIRT);	
+					else if(y < (int)height - 4)
+						setBlock(x, y, z, STONE);
+					else
+						setBlock(x, y, z, AIR);
 
-				if(y == 0)
-					setBlock(x, y, z, STONE);
+					float cave = stb_perlin_noise3(
+						(float)x / CAVE_FREQUENCY, 
+						(float)y / CAVE_FREQUENCY,
+						(float)z / CAVE_FREQUENCY,
+						0,
+						0,
+						0
+					);
+
+					if(cave < -0.75f + 0.6f * (1.0f - float(y) / float(worldHeight)))
+						setBlock(x, y, z, AIR);
+
+					if(y == 0)
+						setBlock(x, y, z, STONE);
+				}
 			}
 		}
-	}
+	};
+
+	std::vector<std::thread> threads;
+
+	for(int32_t x = -(int32_t)worldSize / (2 * CHUNK_SIZE); x < (int32_t)worldSize / (2 * CHUNK_SIZE); x++)
+		for(int32_t z = -(int32_t)worldSize / (2 * CHUNK_SIZE); z < (int32_t)worldSize / (2 * CHUNK_SIZE); z++)
+			threads.push_back(std::thread(generateChunk, x, z));
+
+	for(auto &thread : threads)
+		thread.join();
 }
 
 uint8_t World::getBlock(int32_t x, int32_t y, int32_t z)
