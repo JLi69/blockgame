@@ -33,6 +33,8 @@ void World::generateWorld()
 {
 	std::cerr << "Building terrain...\n";
 
+	std::vector<std::thread> threads;
+
 	auto generateChunk = [this](int32_t chunkX, int32_t chunkZ) {
 		const float FREQUENCY = 128.0f;
 		const float CAVE_FREQUENCY = 16.0f;
@@ -61,6 +63,9 @@ void World::generateWorld()
 				height *= 32.0f;
 				height += 64.0f;
 
+				for(int32_t y = 0; y < worldHeight; y++)
+					setBlock(x, y, z, AIR);
+
 				for(int32_t y = 0; y <= (int32_t)height; y++)
 				{			
 					if(y == (int)height)
@@ -70,8 +75,6 @@ void World::generateWorld()
 						setBlock(x, y, z, DIRT);	
 					else if(y < (int)height - 4)
 						setBlock(x, y, z, STONE);
-					else
-						setBlock(x, y, z, AIR);
 
 					float cave = stb_perlin_noise3(
 						(float)x / CAVE_FREQUENCY, 
@@ -90,9 +93,7 @@ void World::generateWorld()
 				}
 			}
 		}
-	};
-
-	std::vector<std::thread> threads;
+	};	
 
 	for(int32_t x = -(int32_t)worldSize / (2 * CHUNK_SIZE); x < (int32_t)worldSize / (2 * CHUNK_SIZE); x++)
 		for(int32_t z = -(int32_t)worldSize / (2 * CHUNK_SIZE); z < (int32_t)worldSize / (2 * CHUNK_SIZE); z++)
@@ -322,8 +323,6 @@ void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 
 	std::cerr << "Building chunk: " << chunkX << ", " << chunkZ << '\n';
 
-	glBindVertexArray(chunkVaos.at(index));
-
 	std::vector<float> chunk;
 
 	int32_t worldChunkX = chunkX * CHUNK_SIZE,
@@ -332,12 +331,13 @@ void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 	for(int32_t x = worldChunkX; x < worldChunkX + CHUNK_SIZE; x++)
 		for(int32_t y = 0; y < worldHeight; y++)
 			for(int32_t z = worldChunkZ; z < worldChunkZ + CHUNK_SIZE; z++)
-				addBlockVertices(chunk, x, y, z);	
-	
+				addBlockVertices(chunk, x, y, z);
+
 	// 5 values per vertex
 	// (x, y, z) (textureX, textureY)
 	chunkVertexCount.at(index) = chunk.size() / 5;				
 
+	glBindVertexArray(chunkVaos.at(index));
 	glBindBuffer(GL_ARRAY_BUFFER, buffers.at(index * 2));			
 	glBufferData(GL_ARRAY_BUFFER, 
 		 chunk.size() * sizeof(float), 
@@ -355,13 +355,75 @@ void World::buildChunk(int32_t chunkX, int32_t chunkZ)
 	glEnableVertexAttribArray(1);
 }
 
+ChunkMesh World::createChunkMesh(int32_t chunkX, int32_t chunkZ)
+{
+	int32_t index = ((chunkX + worldSize / (2 * CHUNK_SIZE)) * (worldSize / CHUNK_SIZE + 1) +
+					 (chunkZ + worldSize / (2 * CHUNK_SIZE)));
+
+	//Bounds check
+	if(chunkX < -int32_t(worldSize) / (2 * CHUNK_SIZE) || chunkZ < -int32_t(worldSize) / (2 * CHUNK_SIZE) ||
+	   chunkX >= int32_t(worldSize) / (2 * CHUNK_SIZE) || chunkZ >= int32_t(worldSize) / (2 * CHUNK_SIZE))
+		return { {}, -1 };
+
+	std::vector<float> chunk;
+
+	int32_t worldChunkX = chunkX * CHUNK_SIZE,
+			worldChunkZ = chunkZ * CHUNK_SIZE;
+
+	for(int32_t x = worldChunkX; x < worldChunkX + CHUNK_SIZE; x++)
+		for(int32_t y = 0; y < worldHeight; y++)
+			for(int32_t z = worldChunkZ; z < worldChunkZ + CHUNK_SIZE; z++)
+				addBlockVertices(chunk, x, y, z);	
+	
+	// 5 values per vertex
+	// (x, y, z) (textureX, textureY)
+	chunkVertexCount.at(index) = chunk.size() / 5;
+
+	return { chunk, index };
+}
+
 void World::buildAllChunks()
 {
-	std::cerr << "Building all chunks...\n";
+	std::cerr << "Building all chunks...\n";	
+
+	std::vector<std::thread> threads;
+	std::vector<ChunkMesh> chunkMeshes(chunkVaos.size());
+
+	auto buildChunkFunc = [this, &chunkMeshes](int32_t chunkX, int32_t chunkZ)
+	{
+		ChunkMesh chunk = createChunkMesh(chunkX, chunkZ);
+		chunkMeshes.at(chunk.index) = chunk;
+	};
 
 	for(int32_t x = -(int32_t)worldSize / (2 * CHUNK_SIZE); x < (int32_t)worldSize / (2 * CHUNK_SIZE); x++)
 		for(int32_t z = -(int32_t)worldSize / (2 * CHUNK_SIZE); z < (int32_t)worldSize / (2 * CHUNK_SIZE); z++)
-			buildChunk(x, z);
+			threads.push_back(std::thread(buildChunkFunc, x, z));
+
+	for(auto &thread : threads)
+		thread.join();
+
+	for(auto &mesh : chunkMeshes)
+	{
+		if(mesh.index < 0)
+			continue;
+
+		glBindVertexArray(chunkVaos.at(mesh.index));
+		glBindBuffer(GL_ARRAY_BUFFER, buffers.at(mesh.index * 2));			
+		glBufferData(GL_ARRAY_BUFFER, 
+			 mesh.vertices.size() * sizeof(float), 
+			 mesh.vertices.data(),
+			 GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)0);
+		glEnableVertexAttribArray(0);			
+
+		glBindBuffer(GL_ARRAY_BUFFER, buffers.at(mesh.index * 2 + 1));	
+		glBufferData(GL_ARRAY_BUFFER, 
+			 mesh.vertices.size() * sizeof(float), 
+			 mesh.vertices.data(),
+			 GL_STATIC_DRAW);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
+		glEnableVertexAttribArray(1);
+	}
 }
 
 int World::displayWorld(Frustum viewFrustum, glm::vec3 camPos, uint32_t renderDist)

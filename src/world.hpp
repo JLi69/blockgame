@@ -17,6 +17,12 @@ enum Blocks : uint8_t
 const int32_t CHUNK_SIZE = 16;
 const float WORLD_SCALE = 2.0f;
 
+struct ChunkMesh
+{
+	std::vector<float> vertices;
+	int32_t index = -1;
+};
+
 class World
 {
 	uint8_t *blocks = nullptr;
@@ -30,6 +36,7 @@ class World
 						  int32_t x, 
 						  int32_t y,
 						  int32_t z);
+	ChunkMesh createChunkMesh(int32_t chunkX, int32_t chunkZ);
 public:
 	//World ranges from
 	//x: -size / 2 -> size / 2

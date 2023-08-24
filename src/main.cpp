@@ -349,7 +349,7 @@ int main()
 		glfwSwapBuffers(win);
 		glfwPollEvents();
 
-		gameState.player.handleMouseMovement(win, mousex, mousey, dt);
+		gameState.player.handleMouseMovement(win, mousex, mousey, 0.02f);
 
 		double x, y;
 		glfwGetCursorPos(win, &x, &y);

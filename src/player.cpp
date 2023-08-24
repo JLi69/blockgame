@@ -95,7 +95,7 @@ void Player::selectBlock(int key)
 	}
 }
 
-void Player::handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMousey, float dt)
+void Player::handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMousey, float sensitivity)
 {
 	int cursorMode = glfwGetInputMode(win, GLFW_CURSOR);
 	if(cursorMode == GLFW_CURSOR_NORMAL)
@@ -106,11 +106,11 @@ void Player::handleMouseMovement(GLFWwindow *win, float oldMousex, float oldMous
 
 	//Rotate the yaw of the camera when the cursor moves left and right
 	if(x != oldMousex)
-		yaw += 0.05f * dt * (x - oldMousex);
+		yaw += 0.05f * sensitivity * (x - oldMousex);
 
 	//Rotate the pitch of the camera when the cursor moves up and down
 	if(y != oldMousey)
-		pitch += 0.05f * dt * (y - oldMousey);
+		pitch += 0.05f * sensitivity * (y - oldMousey);
 
 	//Clamp the pitch to be between -pi / 2 radians and pi / 2 radians
 	if(pitch < -3.14159 / 2.0f)
