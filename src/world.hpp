@@ -15,6 +15,7 @@ enum Blocks : uint8_t
 };
 
 const int32_t CHUNK_SIZE = 16;
+const int32_t TEXTURE_ATLAS_SIZE = 16;
 const float WORLD_SCALE = 2.0f;
 
 struct ChunkMesh

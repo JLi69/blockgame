@@ -143,8 +143,8 @@ void addVertices(std::vector<float> &chunk,
 		chunk.push_back(vertices[i * 3 + 1] + y * 2.0f);
 		chunk.push_back(vertices[i * 3 + 2] + z * 2.0f);
 
-		chunk.push_back(textureCoords[i * 2] * 1.0f / (float)CHUNK_SIZE + (blockType % CHUNK_SIZE) * 1.0f / (float)CHUNK_SIZE);
-		chunk.push_back(textureCoords[i * 2 + 1] * 1.0f / (float)CHUNK_SIZE + (blockType / CHUNK_SIZE) * 1.0f / (float)CHUNK_SIZE);
+		chunk.push_back(textureCoords[i * 2] * 1.0f / (float)TEXTURE_ATLAS_SIZE + (blockType % TEXTURE_ATLAS_SIZE) * 1.0f / (float)TEXTURE_ATLAS_SIZE);
+		chunk.push_back(textureCoords[i * 2 + 1] * 1.0f / (float)TEXTURE_ATLAS_SIZE + (blockType / TEXTURE_ATLAS_SIZE) * 1.0f / (float)TEXTURE_ATLAS_SIZE);
 	}
 }
 
