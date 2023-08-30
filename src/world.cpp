@@ -234,6 +234,8 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 
 		if(getBlock(x, y, z) == LOG)	
 			addVertices(chunk, rightFace, rightFaceTexture, x, y, z, getBlock(x, y, z) - 1);
+		else if(getBlock(x, y, z) == GRASS)
+			addVertices(chunk, rightFace, rightFaceTexture, x, y, z, getBlock(x, y, z) + TEXTURE_ATLAS_SIZE);
 		else
 			addVertices(chunk, rightFace, rightFaceTexture, x, y, z, getBlock(x, y, z));
 	}
@@ -263,6 +265,8 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 
 		if(getBlock(x, y, z) == LOG)	
 			addVertices(chunk, leftFace, leftFaceTexture, x, y, z, getBlock(x, y, z) - 1);
+		else if(getBlock(x, y, z) == GRASS)
+			addVertices(chunk, leftFace, leftFaceTexture, x, y, z, getBlock(x, y, z) + TEXTURE_ATLAS_SIZE);
 		else
 			addVertices(chunk, leftFace, leftFaceTexture, x, y, z, getBlock(x, y, z));
 	}
@@ -316,7 +320,10 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 			0.0f, 0.0f,
 		};
 
-		addVertices(chunk, bottomFace, bottomFaceTexture, x, y, z, getBlock(x, y, z));
+		if(getBlock(x, y, z) == GRASS)	
+			addVertices(chunk, bottomFace, bottomFaceTexture, x, y, z, getBlock(x, y, z) + 1);
+		else
+			addVertices(chunk, bottomFace, bottomFaceTexture, x, y, z, getBlock(x, y, z));
 	}
 
 	if(getBlock(x, y, z + 1) == AIR)
@@ -346,6 +353,8 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 	
 		if(getBlock(x, y, z) == LOG)	
 			addVertices(chunk, frontFace, frontFaceTexture, x, y, z, getBlock(x, y, z) - 1);
+		else if(getBlock(x, y, z) == GRASS)
+			addVertices(chunk, frontFace, frontFaceTexture, x, y, z, getBlock(x, y, z) + TEXTURE_ATLAS_SIZE);
 		else
 			addVertices(chunk, frontFace, frontFaceTexture, x, y, z, getBlock(x, y, z));
 	}
@@ -375,6 +384,8 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 
 		if(getBlock(x, y, z) == LOG)	
 			addVertices(chunk, backFace, backFaceTexture, x, y, z, getBlock(x, y, z) - 1);
+		else if(getBlock(x, y, z) == GRASS)
+			addVertices(chunk, backFace, backFaceTexture, x, y, z, getBlock(x, y, z) + TEXTURE_ATLAS_SIZE);
 		else
 			addVertices(chunk, backFace, backFaceTexture, x, y, z, getBlock(x, y, z));	
 	}

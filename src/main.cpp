@@ -96,7 +96,7 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 	{
 		glm::vec3 pos = raycast(
 			state->world, 
-			state->player.hitbox.position + glm::vec3(0.5f, 0.2f, 0.5f),
+			state->player.hitbox.position + glm::vec3(0.5f, 0.8f, 0.5f),
 			state->player.yaw,
 			state->player.pitch,
 			5.0f
@@ -133,7 +133,7 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 	{
 		glm::vec3 pos = raycast(
 			state->world, 
-			state->player.hitbox.position + glm::vec3(0.5f, 0.2f, 0.5f),
+			state->player.hitbox.position + glm::vec3(0.5f, 0.8f, 0.5f),
 			state->player.yaw,
 			state->player.pitch,
 			5.0f
@@ -320,7 +320,7 @@ int main()
 		{
 			glm::vec3 pos = raycast(
 				gameState.world, 
-				gameState.player.hitbox.position + glm::vec3(0.5f, 0.2f, 0.5f),
+				gameState.player.hitbox.position + glm::vec3(0.5f, 0.8f, 0.5f),
 				gameState.player.yaw,
 				gameState.player.pitch,
 				5.0f
