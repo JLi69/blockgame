@@ -92,6 +92,15 @@ void Player::selectBlock(int key)
 	case GLFW_KEY_5:
 		selectedBlock = WOOD;
 		break;
+	case GLFW_KEY_6:
+		selectedBlock = BARK;
+		break;
+	case GLFW_KEY_7:
+		selectedBlock = LOG;
+		break;
+	case GLFW_KEY_8:
+		selectedBlock = LEAVES;
+		break;
 	}
 }
 

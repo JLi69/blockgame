@@ -33,11 +33,12 @@ void World::generateWorld()
 {
 	std::cerr << "Building terrain...\n";
 
-	std::vector<std::thread> threads;
+	std::vector<std::thread> threads;	
 
-	auto generateChunk = [this](int32_t chunkX, int32_t chunkZ) {
-		const float FREQUENCY = 128.0f;
-		const float CAVE_FREQUENCY = 16.0f;
+	const float FREQUENCY = 128.0f;
+	const float CAVE_FREQUENCY = 16.0f;
+
+	auto generateChunk = [this, &FREQUENCY, &CAVE_FREQUENCY](int32_t chunkX, int32_t chunkZ) {	
 
 		// Fill in the world with blocks
 		for(int32_t x = chunkX * CHUNK_SIZE; x < chunkX * CHUNK_SIZE + CHUNK_SIZE; x++)
@@ -68,7 +69,7 @@ void World::generateWorld()
 
 				for(int32_t y = 0; y <= (int32_t)height; y++)
 				{			
-					if(y == (int)height)
+					if(y == (int)height)	
 						setBlock(x, y, z, GRASS);
 					else if(y <= (int)height - 1 && 
 							y >= (int)height - 4)
@@ -89,7 +90,7 @@ void World::generateWorld()
 						setBlock(x, y, z, AIR);
 
 					if(y == 0)
-						setBlock(x, y, z, STONE);
+						setBlock(x, y, z, STONE);	
 				}
 			}
 		}
@@ -101,6 +102,61 @@ void World::generateWorld()
 
 	for(auto &thread : threads)
 		thread.join();
+
+	//Generate trees
+	for(int32_t x = -(int32_t)worldSize / 2; x < (int32_t)worldSize / 2; x++)
+	{
+		for(int32_t z = -(int32_t)worldSize / 2; z < (int32_t)worldSize / 2; z++)
+		{	
+			if(rand() % 1000 == 0)
+			{
+				float height = stb_perlin_fbm_noise3(
+					(float)x / FREQUENCY,
+					0.0f,
+					(float)z / FREQUENCY,
+					2.0f,
+					0.5f,
+					4
+				);
+
+				bool negative = height < 0.0f;
+				height *= height;
+				if(negative)
+					height *= -1.25f;
+				else
+					height *= 1.25f;
+
+				height *= 32.0f;
+				height += 64.0f;
+
+				int y = (int)height;
+				
+				if(getBlock(x, y, z) == GRASS)
+				{
+					int treeHeight = rand() % 4 + 4;
+					for(int i = 1; i <= treeHeight; i++)
+						setBlock(x, y + i, z, LOG);
+
+					for(int leafX = x - 2; leafX <= x + 2; leafX++)
+						for(int leafY = y + treeHeight - 2; leafY < y + treeHeight; leafY++)
+							for(int leafZ = z - 2; leafZ <= z + 2; leafZ++)
+								if(getBlock(leafX, leafY, leafZ) == AIR)
+									setBlock(leafX, leafY, leafZ, LEAVES);
+					
+					for(int leafX = x - 1; leafX <= x + 1; leafX++)
+						for(int leafZ = z - 1; leafZ <= z + 1; leafZ++)
+							if(getBlock(leafX, y + treeHeight, leafZ) == AIR)
+								setBlock(leafX, y + treeHeight, leafZ, LEAVES);
+				
+					for(int leafX = x - 1; leafX <= x + 1; leafX++)
+						for(int leafZ = z - 1; leafZ <= z + 1; leafZ++)
+							if(getBlock(leafX, y + treeHeight + 1, leafZ) == AIR &&
+							   (leafX - x) * (leafX - x) + (leafZ - z) * (leafZ - z) <= 1)
+								setBlock(leafX, y + treeHeight + 1, leafZ, LEAVES);
+				}
+			}
+		}
+	}
 }
 
 uint8_t World::getBlock(int32_t x, int32_t y, int32_t z)
@@ -176,7 +232,10 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 			1.0f, 0.0f,	
 		};
 
-		addVertices(chunk, rightFace, rightFaceTexture, x, y, z, getBlock(x, y, z));
+		if(getBlock(x, y, z) == LOG)	
+			addVertices(chunk, rightFace, rightFaceTexture, x, y, z, getBlock(x, y, z) - 1);
+		else
+			addVertices(chunk, rightFace, rightFaceTexture, x, y, z, getBlock(x, y, z));
 	}
 
 	if(getBlock(x - 1, y, z) == AIR)
@@ -202,8 +261,10 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 			1.0f, 0.0f,	
 		};
 
-
-		addVertices(chunk, leftFace, leftFaceTexture, x, y, z, getBlock(x, y, z));
+		if(getBlock(x, y, z) == LOG)	
+			addVertices(chunk, leftFace, leftFaceTexture, x, y, z, getBlock(x, y, z) - 1);
+		else
+			addVertices(chunk, leftFace, leftFaceTexture, x, y, z, getBlock(x, y, z));
 	}
 
 	if(getBlock(x, y + 1, z) == AIR)
@@ -282,6 +343,11 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 		};
 
 		addVertices(chunk, frontFace, frontFaceTexture, x, y, z, getBlock(x, y, z));
+	
+		if(getBlock(x, y, z) == LOG)	
+			addVertices(chunk, frontFace, frontFaceTexture, x, y, z, getBlock(x, y, z) - 1);
+		else
+			addVertices(chunk, frontFace, frontFaceTexture, x, y, z, getBlock(x, y, z));
 	}
 
 	if(getBlock(x, y, z - 1) == AIR)
@@ -307,7 +373,10 @@ void World::addBlockVertices(std::vector<float> &chunk, int32_t x, int32_t y, in
 			0.0f, 0.0f,
 		};	
 
-		addVertices(chunk, backFace, backFaceTexture, x, y, z, getBlock(x, y, z));	
+		if(getBlock(x, y, z) == LOG)	
+			addVertices(chunk, backFace, backFaceTexture, x, y, z, getBlock(x, y, z) - 1);
+		else
+			addVertices(chunk, backFace, backFaceTexture, x, y, z, getBlock(x, y, z));	
 	}
 }
 

@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <stdlib.h>
 
 #include "shader.hpp"
 #include "player.hpp"
@@ -187,6 +188,8 @@ void handleMouseInput(GLFWwindow *win, int button, int action, int mods)
 
 int main()
 {			
+	srand(0);
+
 	//Try to initialize glfw
 	if(!glfwInit())
 	{

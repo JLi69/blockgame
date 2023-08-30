@@ -11,7 +11,10 @@ enum Blocks : uint8_t
 	DIRT,
 	STONE,
 	BRICK,
-	WOOD
+	WOOD,
+	BARK,
+	LOG,
+	LEAVES
 };
 
 const int32_t CHUNK_SIZE = 16;
